@@ -1,4 +1,9 @@
+# Simple Docker setup for Earth Link
+# Runs MySQL (backend) + Next.js (frontend) with hot reload
+# Usage: docker compose up
+
 services:
+  # MySQL Database (Backend)
   mysql:
     image: mysql:8.0
     container_name: earthlink_mysql
@@ -8,33 +13,55 @@ services:
       MYSQL_USER: earthlink
       MYSQL_PASSWORD: earthlink_password
     ports:
-      - "3307:3306"
+      - '3307:3306'
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
       timeout: 20s
       retries: 10
     restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+    command: --log-error-verbosity=1
 
+  # Next.js Frontend (with hot reload)
   web:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: earthlink_web
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=earthlink
       - DB_PASSWORD=earthlink_password
       - DB_NAME=earthlink_db
+      - WATCHPACK_POLLING=true
+    volumes:
+      # Mount source code for hot reload
+      - ./app:/app/app
+      - ./lib:/app/lib
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./next.config.mjs:/app/next.config.mjs
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./jsconfig.json:/app/jsconfig.json
+      # Keep node_modules in container
+      - /app/node_modules
+      - /app/.next
     depends_on:
       mysql:
         condition: service_healthy
     restart: unless-stopped
+    stdin_open: true
+    tty: true
 
 volumes:
   mysql_data:

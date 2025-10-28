@@ -1,6 +1,22 @@
 # Earth Link
 
-A minimal MVP social posting web app built with Next.js 14+ and MySQL.
+A minimal MVP social posting web app built with Next.js 15 and MySQL.
+
+## 🚀 Quick Start
+
+**Start everything with one command:**
+
+```bash
+docker compose up --build
+```
+
+**That's it!** Open http://localhost:3000
+
+- ✅ MySQL database runs in Docker
+- ✅ Next.js frontend runs in Docker
+- ✅ **Hot reload enabled** - edit any file → save → see changes instantly! 🔥
+
+---
 
 ## Features
 
@@ -8,37 +24,94 @@ A minimal MVP social posting web app built with Next.js 14+ and MySQL.
 - 👤 Stub authentication (always logged in as Demo User)
 - 🗄️ MySQL database with connection pooling
 - 🎨 Modern UI with Tailwind CSS
-- 🐳 Docker support with MySQL service
-- 🚀 Server-side rendering for initial page load
+- 🐳 Docker with hot reload for development
+- 🚀 Server-side rendering
+- 🔥 Fast refresh and instant code updates
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Database**: MySQL 8.0 via `mysql2`
 - **Styling**: Tailwind CSS v4
-- **Deployment**: Docker Compose with multi-stage build
+- **Deployment**: Docker Compose
+
+---
+
+## Commands
+
+```bash
+# Start everything (first time)
+docker compose up --build
+
+# Start (after first time)
+docker compose up
+
+# Stop
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# Reset database (delete all data)
+docker compose down -v
+docker compose up --build
+```
+
+### npm Scripts
+
+```bash
+npm run docker:up        # Start Docker
+npm run docker:build     # Build and start
+npm run docker:down      # Stop Docker
+npm run docker:logs      # View logs
+npm run docker:reset     # Reset everything
+
+# Local development (without Docker)
+npm run dev              # Requires MySQL running locally
+```
+
+---
+
+## What's Running?
+
+When you run `docker compose up`:
+
+**MySQL (Backend)**
+- Port: 3307 (external), 3306 (internal)
+- Database: `earthlink_db`
+- User: `earthlink`
+- Password: `earthlink_password`
+
+**Next.js (Frontend)**
+- Port: 3000
+- Hot reload: ✅ Enabled
+- Environment: Development
+
+---
 
 ## Project Structure
 
 ```
 /app
-  ├── layout.js
-  ├── page.js
-  ├── /api
-  │   ├── /health
-  │   │   └── route.js
-  │   └── /posts
-  │       ├── route.js
-  │       └── /[id]
-  │           └── route.js
-  └── /components
-      ├── PostForm.jsx
-      ├── PostList.jsx
-      └── PostsPage.jsx
+  ├── layout.js          # Root layout
+  ├── page.js            # Home page
+  ├── /api               # API routes
+  │   ├── /health        # Health check
+  │   └── /posts         # Posts CRUD
+  └── /components        # React components
+      ├── PostModal.jsx  # Create post popup
+      ├── PostList.jsx   # Display posts
+      └── PostsPage.jsx  # Main feed
+
 /lib
-  ├── db.js
-  └── initDb.js
+  ├── db.js              # MySQL connection
+  └── initDb.js          # DB initialization
+
+Dockerfile               # Docker image
+docker-compose.yml       # Services configuration
 ```
+
+---
 
 ## API Endpoints
 
@@ -51,6 +124,8 @@ A minimal MVP social posting web app built with Next.js 14+ and MySQL.
 - `GET /api/posts/[id]` - Get a single post
 - `PATCH /api/posts/[id]` - Update a post
 - `DELETE /api/posts/[id]` - Delete a post
+
+---
 
 ## Database Schema
 
@@ -78,202 +153,166 @@ CREATE TABLE posts (
 )
 ```
 
-## Running with Docker (Recommended)
+---
 
-### Prerequisites
-- Docker
-- Docker Compose
+## Development
 
-### Setup
+### Hot Reload
 
-1. **Build and start the services**
-   ```bash
-   docker compose up --build
-   ```
+The Docker setup includes **hot reload**:
 
-   This will start:
-   - MySQL 8.0 database on port 3307
-   - Next.js web app on port 3000
-   - Display welcome message with access URLs
+1. Edit any file in `app/` or `lib/`
+2. Save
+3. Changes appear **instantly** in browser! ⚡
 
-2. **Access the application**
-   ```
-   http://localhost:3000
-   ```
+No rebuild needed!
 
-3. **Stop the services**
-   ```bash
-   docker compose down
-   ```
+### Environment Variables
+
+Configuration is in `docker-compose.yml`:
+
+```yaml
+environment:
+  - NODE_ENV=development
+  - DB_HOST=mysql
+  - DB_PORT=3306
+  - DB_USER=earthlink
+  - DB_PASSWORD=earthlink_password
+  - DB_NAME=earthlink_db
+```
 
 ### Data Persistence
 
-Data is persisted in a Docker volume named `mysql_data`. This means:
-- Your posts and database survive container restarts
-- Data persists even after `docker compose down`
-- To completely reset: `docker compose down -v` (removes volumes)
+Database data is stored in Docker volume `mysql_data`:
+- Survives container restarts
+- Persists after `docker compose down`
+- To reset: `docker compose down -v`
 
-## Running Locally
+---
 
-### Prerequisites
-- Node.js 20+
-- MySQL 8.0+ installed and running locally
-- npm
+## Troubleshooting
 
-### Setup
+### Port already in use?
 
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# Stop containers
+docker compose down
 
-2. **Set up MySQL database**
-   ```bash
-   mysql -u root -p
-   ```
+# Check what's using the port
+lsof -i :3000
+lsof -i :3307
 
-   Then run:
-   ```sql
-   CREATE DATABASE earthlink_db;
-   CREATE USER 'earthlink'@'localhost' IDENTIFIED BY 'earthlink_password';
-   GRANT ALL PRIVILEGES ON earthlink_db.* TO 'earthlink'@'localhost';
-   FLUSH PRIVILEGES;
-   ```
+# Kill process or change port in docker-compose.yml
+```
 
-3. **Create environment file**
-   ```bash
-   cp .env.example .env.local
-   ```
+### Changes not appearing?
 
-   Edit `.env.local` if needed to match your MySQL configuration.
+```bash
+# Hard refresh browser
+# Mac: Cmd + Shift + R
+# Windows: Ctrl + Shift + R
 
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+# Or restart web container
+docker compose restart web
+```
 
-5. **Open your browser**
-   ```
-   http://localhost:3000
-   ```
+### Database connection error?
 
-The database will be automatically initialized with:
-- Tables created if they don't exist
-- Demo user (id=1) created automatically
+```bash
+# Check MySQL is running
+docker compose ps
 
-## Environment Variables
+# View logs
+docker compose logs mysql
 
-Create a `.env.local` file for local development:
+# Restart MySQL
+docker compose restart mysql
+```
 
+### Need fresh start?
+
+```bash
+# Remove everything and start over
+docker compose down -v
+docker system prune -f
+docker compose up --build
+```
+
+---
+
+## Local Development (Without Docker)
+
+If you prefer to run without Docker:
+
+**1. Install MySQL locally**
+
+**2. Create database:**
+```sql
+CREATE DATABASE earthlink_db;
+CREATE USER 'earthlink'@'localhost' IDENTIFIED BY 'earthlink_password';
+GRANT ALL PRIVILEGES ON earthlink_db.* TO 'earthlink'@'localhost';
+```
+
+**3. Create `.env.local`:**
 ```bash
 NODE_ENV=development
 DB_HOST=localhost
-DB_PORT=3307
+DB_PORT=3306
 DB_USER=earthlink
 DB_PASSWORD=earthlink_password
 DB_NAME=earthlink_db
 ```
 
-For Docker, these are configured in `docker-compose.yml`.
-
-## Development Notes
-
-### Stub Authentication
-The app uses stub authentication where all requests are treated as coming from the demo user (userId=1). This is for MVP purposes only.
-
-### Database Initialization
-The database automatically initializes on first run:
-- Creates tables if they don't exist
-- Creates demo user with id=1
-- Tables use foreign key constraints and indexes
-
-### Error Handling
-- `400 Bad Request` - Invalid post data (empty body)
-- `404 Not Found` - Post doesn't exist
-- `403 Forbidden` - Trying to modify someone else's post
-- `500 Internal Server Error` - Database or server errors
-
-## Docker Services
-
-### MySQL Service
-- **Image**: mysql:8.0
-- **Port**: 3306
-- **Volume**: mysql_data (persists database)
-- **Healthcheck**: Ensures MySQL is ready before starting web service
-
-### Web Service
-- **Build**: Multi-stage Dockerfile with standalone output
-- **Port**: 3000
-- **Dependencies**: Waits for MySQL to be healthy
-- **Environment**: Configured to connect to MySQL service
-
-## Production Build
-
-To build for production:
-
+**4. Run:**
 ```bash
-npm run build
-npm start
+npm install
+npm run dev
 ```
 
-Or with Docker:
+---
 
-```bash
-docker compose up --build
-```
+## Deployment
 
-## API Testing
+The Docker setup is ready for deployment:
 
-### Health Check
-```bash
-curl http://localhost:3000/api/health
-```
+1. Update passwords in `docker-compose.yml`
+2. Set `NODE_ENV=production`
+3. Deploy to your preferred platform
 
-### Create a Post
-```bash
-curl -X POST http://localhost:3000/api/posts \
-  -H "Content-Type: application/json" \
-  -d '{"body":"Hello, World!"}'
-```
+---
 
-### Get All Posts
-```bash
-curl http://localhost:3000/api/posts
-```
+## Contributing
 
-### Delete a Post
-```bash
-curl -X DELETE http://localhost:3000/api/posts/1
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test with `docker compose up --build`
+5. Submit a pull request
 
-## Troubleshooting
-
-### MySQL Connection Issues
-- Check if MySQL is running: `docker compose ps`
-- Check logs: `docker compose logs mysql`
-- Verify environment variables in `.env.local` or `docker-compose.yml`
-
-### Port Already in Use
-- MySQL (3307): Change external port mapping in `docker-compose.yml`
-- Web (3000): Change port mapping in `docker-compose.yml`
-
-### Viewing Startup Messages
-When you run `docker compose up`, you'll see:
-- MySQL health check status
-- Web application startup message with access URLs
-- Database connection confirmation
-
-## Future Enhancements
-
-- Real user authentication and authorization
-- User registration and profiles
-- Post editing interface
-- Like/comment functionality
-- Pagination for post lists
-- Search functionality
-- Image uploads
-- Real-time updates with WebSockets
+---
 
 ## License
 
 MIT
+
+---
+
+## Quick Reference
+
+```bash
+# Start
+docker compose up --build
+
+# Stop
+docker compose down
+
+# Logs
+docker compose logs -f web
+
+# Reset
+docker compose down -v && docker compose up --build
+```
+
+**Open:** http://localhost:3000
+
+**Edit any file → Save → See changes instantly!** ✨
