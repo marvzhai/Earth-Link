@@ -1,6 +1,7 @@
 import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import PostsPage from './components/PostsPage';
+import Link from 'next/link';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
@@ -34,46 +35,54 @@ export default async function Home() {
   const posts = await getPosts();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4 max-w-3xl">
+      <header className="border-b border-stone-200 bg-white">
+        <div className="container mx-auto px-6 py-6 max-w-5xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white text-xl font-bold">🌍</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Earth Link
-                </h1>
-                <p className="text-xs text-gray-500">Connect with the world</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🌍</span>
+              <h1 className="text-2xl font-semibold text-stone-800">
+                Earth Link
+              </h1>
             </div>
-            
-            {/* Stats */}
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="text-center">
-                <div className="font-bold text-gray-900">{posts.length}</div>
-                <div className="text-gray-500 text-xs">Posts</div>
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-gray-900">1</div>
-                <div className="text-gray-500 text-xs">Users</div>
-              </div>
-            </div>
+
+            {/* Profile Link */}
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span className="text-sm font-medium">Profile</span>
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Main Feed */}
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-6 py-12 max-w-5xl">
         {/* Welcome Message (only if no posts) */}
         {posts.length === 0 && (
-          <div className="mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white">
-            <h2 className="text-3xl font-bold mb-2">Welcome to Earth Link! 👋</h2>
-            <p className="text-blue-100 text-lg">
-              Share your thoughts, ideas, and connect with others. Click the + button to create your first post.
+          <div className="mb-16 text-center py-20">
+            <div className="text-6xl mb-6">🌱</div>
+            <h2 className="text-3xl font-semibold text-stone-800 mb-4">
+              Welcome to Earth Link
+            </h2>
+            <p className="text-lg text-stone-600 max-w-xl mx-auto">
+              Share your thoughts and connect with the community. Click the +
+              button to create your first post.
             </p>
           </div>
         )}
@@ -83,9 +92,28 @@ export default async function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-gray-200 bg-white/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 max-w-3xl text-center text-gray-500 text-sm">
-          <p>Built with Next.js, MySQL, and ❤️</p>
+      <footer className="mt-32 py-8 border-t border-stone-200">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="flex items-center justify-between text-sm text-stone-500">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🌍</span>
+              <span>Earth Link</span>
+            </div>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-stone-800 transition-colors">
+                About
+              </a>
+              <a href="#" className="hover:text-stone-800 transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="hover:text-stone-800 transition-colors">
+                Terms
+              </a>
+              <a href="#" className="hover:text-stone-800 transition-colors">
+                Contact
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
