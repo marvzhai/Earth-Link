@@ -40,30 +40,24 @@ export default async function Home() {
       <header className="border-b border-stone-200 bg-white">
         <div className="container mx-auto px-6 py-6 max-w-5xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🌍</span>
-              <h1 className="text-2xl font-semibold text-stone-800">
-                Earth Link
-              </h1>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <span className="text-3xl">🌍</span>
+                <h1 className="text-2xl font-semibold text-stone-800">Earth Link</h1>
+              </Link>
+
+              {/* Left nav buttons */}
+              <div className="flex items-center gap-2">
+                <Link href="/" className="px-3 py-2 text-sm rounded-md text-stone-700 hover:bg-stone-100">Feed</Link>
+                <Link href="/events" className="px-3 py-2 text-sm rounded-md text-stone-700 hover:bg-stone-100">Events</Link>
+                <Link href="/groups" className="px-3 py-2 text-sm rounded-md text-stone-700 hover:bg-stone-100">Groups</Link>
+              </div>
             </div>
 
             {/* Profile Link */}
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
+            <Link href="/profile" className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <span className="text-sm font-medium">Profile</span>
             </Link>
