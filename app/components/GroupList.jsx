@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function GroupList({ groups, onGroupDeleted }) {
+export default function GroupList({ groups, onGroupDeleted, currentUser }) {
     const [deletingId, setDeletingId] = useState(null);
 
     const handleDelete = async (id) => {
@@ -40,9 +40,15 @@ export default function GroupList({ groups, onGroupDeleted }) {
                             <div className="text-sm text-stone-500 mt-1">{g.creatorName ? `${g.creatorName} @${g.creatorHandle}` : 'Creator'}</div>
                         </div>
 
-                        <button onClick={() => handleDelete(g.id)} disabled={deletingId === g.id} className="text-stone-400 hover:text-stone-700 transition-colors">
-                            {deletingId === g.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                        {currentUser?.id === g.creatorId && (
+                            <button
+                                onClick={() => handleDelete(g.id)}
+                                disabled={deletingId === g.id}
+                                className="text-stone-400 hover:text-stone-700 transition-colors"
+                            >
+                                {deletingId === g.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                        )}
                     </div>
 
                     <div className="text-sm text-stone-600 mb-3">

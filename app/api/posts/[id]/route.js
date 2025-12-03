@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { initializeDatabase } from '@/lib/initDb';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET /api/posts/[id] - Get a single post
 export async function GET(request, { params }) {
   try {
-    const { id } = await params;
+    await initializeDatabase();
+    const { id } = params;
     
     const [posts] = await pool.query(`
       SELECT 
@@ -38,7 +41,16 @@ export async function GET(request, { params }) {
 // PATCH /api/posts/[id] - Update a post
 export async function PATCH(request, { params }) {
   try {
-    const { id } = await params;
+    await initializeDatabase();
+    const { id } = params;
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'You must be logged in to update posts.' },
+        { status: 401 }
+      );
+    }
     const { body } = await request.json();
 
     // Validate input
@@ -62,8 +74,7 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // Stub auth: verify user owns the post (userId=1)
-    if (existingPosts[0].authorId !== 1) {
+    if (existingPosts[0].authorId !== currentUser.id) {
       return NextResponse.json(
         { error: 'Forbidden: You can only edit your own posts' },
         { status: 403 }
@@ -102,7 +113,16 @@ export async function PATCH(request, { params }) {
 // DELETE /api/posts/[id] - Delete a post
 export async function DELETE(request, { params }) {
   try {
-    const { id } = await params;
+    await initializeDatabase();
+    const { id } = params;
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'You must be logged in to delete posts.' },
+        { status: 401 }
+      );
+    }
 
     // Check if post exists
     const [existingPosts] = await pool.query(
@@ -117,8 +137,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Stub auth: verify user owns the post (userId=1)
-    if (existingPosts[0].authorId !== 1) {
+    if (existingPosts[0].authorId !== currentUser.id) {
       return NextResponse.json(
         { error: 'Forbidden: You can only delete your own posts' },
         { status: 403 }

@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import PostsPage from './components/PostsPage';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ async function getPosts() {
 }
 
 export default async function Home() {
-  const posts = await getPosts();
+  const [posts, currentUser] = await Promise.all([getPosts(), getCurrentUser()]);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -82,7 +83,7 @@ export default async function Home() {
         )}
 
         {/* Posts Feed */}
-        <PostsPage initialPosts={posts} />
+        <PostsPage initialPosts={posts} currentUser={currentUser} />
       </main>
 
       {/* Footer */}

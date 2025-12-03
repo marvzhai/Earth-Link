@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET /api/events - List all events
 export async function GET() {
@@ -38,6 +39,14 @@ export async function POST(request) {
         await initializeDatabase();
 
         const { title, location, description, eventTime } = await request.json();
+        const currentUser = await getCurrentUser();
+
+        if (!currentUser) {
+            return NextResponse.json(
+                { error: 'You must be logged in to create an event.' },
+                { status: 401 }
+            );
+        }
 
         if (!title || typeof title !== 'string' || title.trim().length === 0) {
             return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -47,14 +56,15 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Valid eventTime is required' }, { status: 400 });
         }
 
-        // Stub auth: use userId = 1
-        const userId = 1;
+        const userId = currentUser.id;
         const createdAt = new Date();
         const parsedEventTime = new Date(eventTime);
+        const cleanLocation = location?.trim() || null;
+        const cleanDescription = description?.trim() || null;
 
         const [result] = await pool.query(
             'INSERT INTO events (creatorId, title, location, description, eventTime, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, title.trim(), location || null, description || null, parsedEventTime, createdAt]
+            [userId, title.trim(), cleanLocation, cleanDescription, parsedEventTime, createdAt]
         );
 
         const [rows] = await pool.query(`
