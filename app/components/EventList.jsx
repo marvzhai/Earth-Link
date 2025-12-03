@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function EventList({ events, onEventDeleted }) {
+export default function EventList({ events, onEventDeleted, currentUser }) {
     const [deletingId, setDeletingId] = useState(null);
 
     const handleDelete = async (id) => {
@@ -42,13 +42,15 @@ export default function EventList({ events, onEventDeleted }) {
                             <div className="text-sm text-stone-500 mt-1">{ev.creatorName ? `${ev.creatorName} @${ev.creatorHandle}` : 'Host'}</div>
                         </div>
 
-                        <button
-                            onClick={() => handleDelete(ev.id)}
-                            disabled={deletingId === ev.id}
-                            className="text-stone-400 hover:text-stone-700 transition-colors"
-                        >
-                            {deletingId === ev.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                        {currentUser?.id === ev.creatorId && (
+                            <button
+                                onClick={() => handleDelete(ev.id)}
+                                disabled={deletingId === ev.id}
+                                className="text-stone-400 hover:text-stone-700 transition-colors"
+                            >
+                                {deletingId === ev.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                        )}
                     </div>
 
                     <div className="text-sm text-stone-600 mb-3">

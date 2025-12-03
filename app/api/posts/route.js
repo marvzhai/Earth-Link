@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET /api/posts - List all posts
 export async function GET() {
@@ -36,23 +37,30 @@ export async function POST(request) {
     // Initialize database
     await initializeDatabase();
 
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'You must be logged in to create a post.' },
+        { status: 401 }
+      );
+    }
+
     const { body } = await request.json();
+    const trimmedBody = body?.trim();
 
     // Validate input
-    if (!body || typeof body !== 'string' || body.trim().length === 0) {
+    if (!trimmedBody || typeof trimmedBody !== 'string' || trimmedBody.length === 0) {
       return NextResponse.json(
         { error: 'Post body is required and must be a non-empty string' },
         { status: 400 }
       );
     }
 
-    // Stub auth: always use userId=1
-    const userId = 1;
     const createdAt = new Date();
 
     const [result] = await pool.query(
       'INSERT INTO posts (authorId, body, createdAt) VALUES (?, ?, ?)',
-      [userId, body.trim(), createdAt]
+      [currentUser.id, trimmedBody, createdAt]
     );
 
     // Fetch the created post with user info

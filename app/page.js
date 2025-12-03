@@ -2,6 +2,8 @@ import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import PostsPage from './components/PostsPage';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
@@ -32,6 +34,11 @@ async function getPosts() {
 }
 
 export default async function Home() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/login');
+  }
+
   const posts = await getPosts();
 
   return (
@@ -82,7 +89,7 @@ export default async function Home() {
         )}
 
         {/* Posts Feed */}
-        <PostsPage initialPosts={posts} />
+        <PostsPage initialPosts={posts} currentUser={currentUser} />
       </main>
 
       {/* Footer */}

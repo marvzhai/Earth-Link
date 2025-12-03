@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET /api/groups - List all groups
 export async function GET() {
@@ -9,17 +10,17 @@ export async function GET() {
 
         const [groups] = await pool.query(`
       SELECT
-        groups.id,
-        groups.name,
-        groups.location,
-        groups.description,
-        groups.createdAt,
-        groups.creatorId,
+        \`groups\`.id,
+        \`groups\`.name,
+        \`groups\`.location,
+        \`groups\`.description,
+        \`groups\`.createdAt,
+        \`groups\`.creatorId,
         users.handle as creatorHandle,
         users.name as creatorName
-      FROM groups
-      JOIN users ON groups.creatorId = users.id
-      ORDER BY groups.createdAt DESC
+      FROM \`groups\`
+      JOIN users ON \`groups\`.creatorId = users.id
+      ORDER BY \`groups\`.createdAt DESC
     `);
 
         return NextResponse.json({ groups });
@@ -37,33 +38,39 @@ export async function POST(request) {
         await initializeDatabase();
 
         const { name, location, description } = await request.json();
+        const currentUser = await getCurrentUser();
+
+        if (!currentUser) {
+            return NextResponse.json({ error: 'You must be logged in to create a group.' }, { status: 401 });
+        }
 
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
             return NextResponse.json({ error: 'Group name is required' }, { status: 400 });
         }
 
-        // Stub auth: userId = 1
-        const userId = 1;
+        const userId = currentUser.id;
         const createdAt = new Date();
+        const cleanLocation = location?.trim() || null;
+        const cleanDescription = description?.trim() || null;
 
         const [result] = await pool.query(
-            'INSERT INTO groups (creatorId, name, location, description, createdAt) VALUES (?, ?, ?, ?, ?)',
-            [userId, name.trim(), location || null, description || null, createdAt]
+            'INSERT INTO `groups` (creatorId, name, location, description, createdAt) VALUES (?, ?, ?, ?, ?)',
+            [userId, name.trim(), cleanLocation, cleanDescription, createdAt]
         );
 
         const [rows] = await pool.query(`
       SELECT
-        groups.id,
-        groups.name,
-        groups.location,
-        groups.description,
-        groups.createdAt,
-        groups.creatorId,
+        \`groups\`.id,
+        \`groups\`.name,
+        \`groups\`.location,
+        \`groups\`.description,
+        \`groups\`.createdAt,
+        \`groups\`.creatorId,
         users.handle as creatorHandle,
         users.name as creatorName
-      FROM groups
-      JOIN users ON groups.creatorId = users.id
-      WHERE groups.id = ?
+      FROM \`groups\`
+      JOIN users ON \`groups\`.creatorId = users.id
+      WHERE \`groups\`.id = ?
     `, [result.insertId]);
 
         return NextResponse.json({ group: rows[0] }, { status: 201 });
