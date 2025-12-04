@@ -1,38 +1,14 @@
-import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import PostsPage from './components/PostsPage';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { Leaf } from 'lucide-react';
+import CreatePostFab from './components/CreatePostFab';
+import { fetchAllPostsWithMeta } from '@/lib/postQueries';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
-
-async function getPosts() {
-  try {
-    // Initialize database
-    await initializeDatabase();
-
-    const [posts] = await pool.query(`
-      SELECT 
-        posts.id,
-        posts.body,
-        posts.createdAt,
-        posts.authorId,
-        users.handle as authorHandle,
-        users.name as authorName
-      FROM posts
-      JOIN users ON posts.authorId = users.id
-      ORDER BY posts.createdAt DESC
-    `);
-
-    return posts;
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return [];
-  }
-}
 
 export default async function Home() {
   const currentUser = await getCurrentUser();
@@ -40,7 +16,8 @@ export default async function Home() {
     redirect('/login');
   }
 
-  const posts = await getPosts();
+  await initializeDatabase();
+  const posts = await fetchAllPostsWithMeta(currentUser.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -108,6 +85,8 @@ export default async function Home() {
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <PostsPage initialPosts={posts} currentUser={currentUser} />
         </section>
+
+        <CreatePostFab currentUser={currentUser} />
       </main>
     </div>
   );
