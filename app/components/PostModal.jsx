@@ -92,26 +92,26 @@ export default function PostModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        className="fixed inset-0 bg-emerald-900/50 backdrop-blur-sm z-40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[85vh] overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-xl max-w-xl w-full max-h-[85vh] overflow-hidden ring-1 ring-emerald-100">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-stone-200">
+          <div className="flex items-center justify-between p-6 border-b border-emerald-100">
             <div>
-              <h2 className="text-xl font-semibold text-stone-800">
+              <h2 className="text-xl font-semibold text-emerald-900">
                 Create a Post
               </h2>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-emerald-600">
                 Posting as {currentUser.name}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-stone-400 hover:text-stone-700 transition-colors"
+              className="text-emerald-400 hover:text-emerald-700 transition-colors"
               aria-label="Close"
             >
               <svg
@@ -131,15 +131,15 @@ export default function PostModal({
           </div>
 
           {/* Content */}
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <textarea
               value={body}
               onChange={handleBodyChange}
               placeholder="What's on your mind?"
-              className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-800 focus:border-transparent resize-none text-stone-800 transition-all ${
+              className={`w-full p-4 border rounded-2xl bg-emerald-50/60 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none text-emerald-900 transition-all ${
                 isOverLimit
-                  ? 'border-red-400 focus:ring-red-500'
-                  : 'border-stone-200'
+                  ? 'border-red-400 bg-white focus:ring-red-500'
+                  : 'border-emerald-100'
               }`}
               rows="8"
               disabled={isSubmitting}
@@ -154,7 +154,7 @@ export default function PostModal({
                     ? 'text-red-600'
                     : isNearLimit
                     ? 'text-amber-600'
-                    : 'text-stone-400'
+                    : 'text-emerald-500'
                 }`}
               >
                 {charCount} / {maxChars}
@@ -164,19 +164,19 @@ export default function PostModal({
             </div>
 
             {/* Footer */}
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-5 py-2 text-stone-700 hover:bg-stone-100 rounded-lg disabled:opacity-50 transition-colors font-medium"
+                className="px-5 py-2 rounded-full text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !body.trim() || isOverLimit}
-                className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:bg-stone-300 disabled:cursor-not-allowed transition-colors font-medium"
+                className="px-6 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-sm transition hover:shadow disabled:bg-emerald-300 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Posting...' : 'Post'}
               </button>

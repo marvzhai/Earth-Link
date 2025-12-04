@@ -40,33 +40,33 @@ export default function PostsPage({ initialPosts, currentUser }) {
   return (
     <>
       {/* Simple Filter Tabs */}
-      <div className="mb-10 flex gap-6 border-b border-stone-200">
+      <div className="mb-6 flex flex-wrap gap-2">
         <button
           onClick={() => setFilter('all')}
-          className={`pb-3 text-sm font-medium transition-colors ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             filter === 'all'
-              ? 'border-b-2 border-stone-800 text-stone-800'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+              : 'text-emerald-700 hover:bg-emerald-50'
           }`}
         >
           All Posts
         </button>
         <button
           onClick={() => setFilter('recent')}
-          className={`pb-3 text-sm font-medium transition-colors ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             filter === 'recent'
-              ? 'border-b-2 border-stone-800 text-stone-800'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+              : 'text-emerald-700 hover:bg-emerald-50'
           }`}
         >
           Recent
         </button>
         <button
           onClick={() => setFilter('popular')}
-          className={`pb-3 text-sm font-medium transition-colors ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             filter === 'popular'
-              ? 'border-b-2 border-stone-800 text-stone-800'
-              : 'text-stone-500 hover:text-stone-800'
+              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+              : 'text-emerald-700 hover:bg-emerald-50'
           }`}
         >
           Popular
@@ -76,7 +76,7 @@ export default function PostsPage({ initialPosts, currentUser }) {
       {/* Minimal Floating Action Button */}
       <button
         onClick={handleFabClick}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-stone-800 text-white rounded-full shadow-lg hover:bg-stone-700 transition-all flex items-center justify-center z-30"
+        className="fixed bottom-8 right-8 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-lg shadow-emerald-200 transition hover:shadow-xl"
         aria-label="Create post"
       >
         <svg
