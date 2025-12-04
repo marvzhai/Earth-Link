@@ -3,6 +3,7 @@ import { initializeDatabase } from '@/lib/initDb';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import { Leaf } from 'lucide-react';
 
 // Mark page as dynamic
 export const dynamic = 'force-dynamic';
@@ -18,40 +19,55 @@ async function getUserData(userId) {
     const user = userRows[0];
 
     if (!user) {
-      return { user: null, postCount: 0, posts: [] };
+      return { user: null, eventCount: 0, groupCount: 0, events: [] };
     }
 
-    const [countRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM posts WHERE authorId = ?',
+    const [eventCountRows] = await pool.query(
+      'SELECT COUNT(*) as count FROM events WHERE creatorId = ?',
       [userId]
     );
-    const countRow = countRows[0] || { count: 0 };
+    const eventCount = eventCountRows[0]?.count || 0;
 
-    const [posts] = await pool.query(
+    const [groupCountRows] = await pool.query(
+      'SELECT COUNT(*) as count FROM `groups` WHERE creatorId = ?',
+      [userId]
+    );
+    const groupCount = groupCountRows[0]?.count || 0;
+
+    const [events] = await pool.query(
       `SELECT 
-        posts.id,
-        posts.body,
-        posts.createdAt,
-        posts.authorId,
-        users.handle as authorHandle,
-        users.name as authorName
-      FROM posts
-      JOIN users ON posts.authorId = users.id
-      WHERE posts.authorId = ?
-      ORDER BY posts.createdAt DESC`,
+        events.id,
+        events.title,
+        events.description,
+        events.location,
+        events.eventTime,
+        events.createdAt,
+        events.creatorId,
+        users.handle as creatorHandle,
+        users.name as creatorName
+      FROM events
+      JOIN users ON events.creatorId = users.id
+      WHERE events.creatorId = ?
+      ORDER BY events.eventTime DESC`,
       [userId]
     );
 
     return {
       user,
-      postCount: countRow.count,
-      posts,
+      eventCount,
+      groupCount,
+      events,
     };
   } catch (error) {
     console.error('Error fetching user data:', error);
-    return { user: null, postCount: 0, posts: [] };
+    return { user: null, eventCount: 0, groupCount: 0, events: [] };
   }
 }
+
+const navLinks = [
+  { href: '/', label: 'Feed' },
+  { href: '/groups', label: 'Groups' },
+];
 
 export default async function ProfilePage() {
   const currentUser = await getCurrentUser();
@@ -60,7 +76,9 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  const { user, postCount, posts } = await getUserData(currentUser.id);
+  const { user, eventCount, groupCount, events } = await getUserData(
+    currentUser.id
+  );
 
   if (!user) {
     redirect('/');
@@ -71,164 +89,158 @@ export default async function ProfilePage() {
     year: 'numeric',
   });
 
-  const navLinks = [
-    { href: '/', label: 'Feed' },
-    { href: '/events', label: 'Events' },
-    { href: '/groups', label: 'Groups' },
-  ];
-
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="container mx-auto px-6 py-6 max-w-5xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="flex items-center gap-3 hover:opacity-70 transition-opacity"
-              >
-                <span className="text-3xl">🌍</span>
-                <h1 className="text-2xl font-semibold text-stone-800">
-                  Earth Link
-                </h1>
-              </Link>
-
-              <div className="flex items-center gap-2">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="px-3 py-2 text-sm rounded-md text-stone-700 hover:bg-stone-100"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
+      <header className="px-6 py-6">
+        <div className="mx-auto flex max-w-5xl items-center justify-between rounded-3xl bg-white/70 p-4 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-2xl"
+            >
+              <Leaf className="h-7 w-7" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-semibold text-emerald-900">
+                Earth Link
+              </h1>
             </div>
-
-            <div className="flex items-center gap-3">
-              <form action="/api/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  className="px-3 py-2 text-sm text-stone-500 hover:text-stone-800"
+            <div className="ml-6 flex items-center gap-2 text-sm text-emerald-700">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
+                  href={link.href}
                 >
-                  Log out
-                </button>
-              </form>
-              <Link
-                href="/profile"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-700 bg-stone-100"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="text-sm font-medium">Profile</span>
-              </Link>
+                  {link.label}
+                </Link>
+              ))}
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <form action="/api/auth/logout" method="POST">
+              <button
+                type="submit"
+                className="rounded-full px-4 py-2 text-sm text-emerald-600 transition hover:bg-emerald-50"
+              >
+                Log out
+              </button>
+            </form>
+            <Link
+              href="/profile"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm transition"
+            >
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-500 text-xs font-semibold text-white">
+                {currentUser.name?.[0]?.toUpperCase() || 'U'}
+              </span>
+              Profile
+            </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-12 max-w-5xl">
-        <div className="bg-white border border-stone-200 rounded-lg p-12 mb-8">
-          <div className="flex items-start gap-8">
-            <div className="w-24 h-24 rounded-full bg-stone-600 flex items-center justify-center text-white font-semibold text-3xl flex-shrink-0">
+      <main className="mx-auto max-w-3xl px-6 pb-24">
+        {/* Profile Card */}
+        <section className="mb-8 rounded-3xl bg-white/90 p-8 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
+          <div className="flex items-start gap-6">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 text-3xl font-semibold text-white flex-shrink-0">
               {user.name?.[0]?.toUpperCase() || 'U'}
             </div>
 
             <div className="flex-1">
-              <h2 className="text-3xl font-semibold text-stone-800 mb-2">
+              <h2 className="text-2xl font-semibold text-emerald-900">
                 {user.name}
               </h2>
-              <p className="text-stone-500 mb-2">@{user.handle}</p>
-              <p className="text-sm text-stone-500">{user.email}</p>
+              <p className="text-emerald-600">@{user.handle}</p>
+              <p className="mt-1 text-sm text-emerald-500">{user.email}</p>
 
-              <div className="flex gap-8 text-sm mt-6">
-                <div>
-                  <span className="font-semibold text-stone-800">
-                    {postCount}
+              <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                <div className="rounded-2xl bg-emerald-50 px-4 py-2">
+                  <span className="font-semibold text-emerald-900">
+                    {eventCount}
                   </span>
-                  <span className="text-stone-500 ml-1">posts</span>
+                  <span className="ml-1 text-emerald-600">events</span>
                 </div>
-                <div>
-                  <span className="font-semibold text-stone-800">Joined</span>
-                  <span className="text-stone-500 ml-1">{joinDate}</span>
+                <div className="rounded-2xl bg-emerald-50 px-4 py-2">
+                  <span className="font-semibold text-emerald-900">
+                    {groupCount}
+                  </span>
+                  <span className="ml-1 text-emerald-600">groups</span>
+                </div>
+                <div className="rounded-2xl bg-emerald-50 px-4 py-2">
+                  <span className="text-emerald-600">Joined</span>
+                  <span className="ml-1 font-semibold text-emerald-900">
+                    {joinDate}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <h3 className="text-xl font-semibold text-stone-800 mb-6">
-            Posts ({postCount})
+        {/* Your Events */}
+        <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
+          <h3 className="mb-6 text-xl font-semibold text-emerald-900">
+            Your Events ({eventCount})
           </h3>
 
-          {posts.length === 0 ? (
-            <div className="text-center py-20 bg-white border border-stone-200 rounded-lg">
-              <div className="text-6xl mb-6">📝</div>
-              <p className="text-stone-600">No posts yet</p>
+          {events.length === 0 ? (
+            <div className="py-16 text-center">
+              <div className="mb-4 text-5xl">🌱</div>
+              <p className="text-emerald-600">
+                You haven&apos;t created any events yet.
+              </p>
+              <Link
+                href="/"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:shadow-md"
+              >
+                Create your first event
+              </Link>
             </div>
           ) : (
-            <div className="space-y-8">
-              {posts.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-white border border-stone-200 rounded-lg p-8"
-                >
-                  <div className="text-sm text-stone-500 mb-4">
-                    {new Date(post.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </div>
-                  <div className="text-stone-700 leading-relaxed whitespace-pre-wrap break-words">
-                    {post.body}
-                  </div>
-                </article>
-              ))}
+            <div className="space-y-4">
+              {events.map((event) => {
+                const eventDate = new Date(event.eventTime);
+                const monthFormatter = new Intl.DateTimeFormat('en-US', {
+                  month: 'short',
+                });
+                const month = monthFormatter.format(eventDate);
+                const day = eventDate.getDate();
+
+                return (
+                  <article
+                    key={event.id}
+                    className="flex items-start gap-4 rounded-2xl border border-emerald-100 bg-white/80 p-4 transition hover:border-emerald-200"
+                  >
+                    <div className="flex flex-col items-center rounded-xl bg-emerald-50 px-3 py-2 text-emerald-700">
+                      <span className="text-xs uppercase tracking-wide">
+                        {month}
+                      </span>
+                      <span className="text-xl font-semibold text-emerald-900">
+                        {day}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-emerald-900">
+                        {event.title}
+                      </h4>
+                      <p className="mt-1 text-sm text-emerald-600">
+                        {event.location || 'Location TBA'}
+                      </p>
+                      {event.description && (
+                        <p className="mt-2 text-sm text-emerald-700 line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
       </main>
-
-      <footer className="mt-32 py-8 border-t border-stone-200">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <div className="flex items-center justify-between text-sm text-stone-500">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌍</span>
-              <span>Earth Link</span>
-            </div>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-stone-800 transition-colors">
-                About
-              </a>
-              <a href="#" className="hover:text-stone-800 transition-colors">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-stone-800 transition-colors">
-                Terms
-              </a>
-              <a href="#" className="hover:text-stone-800 transition-colors">
-                Contact
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

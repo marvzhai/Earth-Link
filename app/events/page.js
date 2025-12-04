@@ -5,38 +5,28 @@ import { getCurrentUser } from '@/lib/auth';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Leaf } from 'lucide-react';
+import { fetchAllEventsWithMeta } from '@/lib/eventQueries';
 
 // Mark page as dynamic to allow DB access
 export const dynamic = 'force-dynamic';
 
-async function getEvents() {
+async function getGroups() {
   try {
     await initializeDatabase();
-    const [events] = await pool.query(`
-      SELECT
-        events.id,
-        events.title,
-        events.location,
-        events.description,
-        events.eventTime,
-        events.createdAt,
-        events.creatorId,
-        users.handle as creatorHandle,
-        users.name as creatorName
-      FROM events
-      JOIN users ON events.creatorId = users.id
-      ORDER BY events.eventTime ASC
+    const [groups] = await pool.query(`
+      SELECT id, name
+      FROM \`groups\`
+      ORDER BY name ASC
     `);
-    return events;
+    return groups;
   } catch (err) {
-    console.error('Error fetching events:', err);
+    console.error('Error fetching groups:', err);
     return [];
   }
 }
 
 const navLinks = [
   { href: '/', label: 'Feed' },
-  { href: '/events', label: 'Events' },
   { href: '/groups', label: 'Groups' },
 ];
 
@@ -46,8 +36,19 @@ export default async function Page() {
     redirect('/login');
   }
 
-  const events = await getEvents();
-  const nextEvent = events[0];
+  await initializeDatabase();
+  const [events, groups] = await Promise.all([
+    fetchAllEventsWithMeta(currentUser.id),
+    getGroups(),
+  ]);
+
+  // Sort by eventTime for upcoming events display
+  const sortedByTime = [...events].sort(
+    (a, b) => new Date(a.eventTime).getTime() - new Date(b.eventTime).getTime()
+  );
+  const nextEvent = sortedByTime.find(
+    (e) => new Date(e.eventTime).getTime() >= Date.now()
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -66,11 +67,7 @@ export default async function Page() {
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
-                    link.href === '/events'
-                      ? 'bg-emerald-100 text-emerald-900 shadow-sm'
-                      : ''
-                  }`}
+                  className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
                   href={link.href}
                 >
                   {link.label}
@@ -103,7 +100,7 @@ export default async function Page() {
               </h2>
               <p className="mt-2 text-sm text-emerald-600">
                 {events.length > 0
-                  ? `We have ${events.length} upcoming ${
+                  ? `We have ${events.length} ${
                       events.length === 1 ? 'event' : 'events'
                     } on the horizon.`
                   : 'No events yet—start the first one and invite the community.'}
@@ -127,7 +124,11 @@ export default async function Page() {
         </section>
 
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <EventsPage initialEvents={events} currentUser={currentUser} />
+          <EventsPage
+            initialEvents={events}
+            currentUser={currentUser}
+            groups={groups}
+          />
         </section>
       </main>
     </div>

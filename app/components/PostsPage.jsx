@@ -64,9 +64,6 @@ export default function PostsPage({ initialFeed = [], currentUser }) {
             {tab.label}
           </button>
         ))}
-        <span className="rounded-full border border-emerald-100 px-4 py-2 text-sm text-emerald-700">
-          {filteredFeed.length} items
-        </span>
       </div>
 
       {/* Feed */}
