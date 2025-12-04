@@ -1,14 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-export default function EventModal({ isOpen, onClose, onEventCreated }) {
+export default function EventModal({
+  isOpen,
+  onClose,
+  onEventCreated,
+  groups = [],
+}) {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [eventTime, setEventTime] = useState('');
+  const [groupId, setGroupId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Force a re-render after mount to ensure portal target is available
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    forceUpdate(1);
+  }, []);
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -29,8 +42,15 @@ export default function EventModal({ isOpen, onClose, onEventCreated }) {
     setLocation('');
     setDescription('');
     setEventTime('');
+    setGroupId('');
     setError('');
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,6 +74,7 @@ export default function EventModal({ isOpen, onClose, onEventCreated }) {
           location: location.trim(),
           description: description.trim(),
           eventTime,
+          groupId: groupId ? Number(groupId) : null,
         }),
       });
       const data = await res.json();
@@ -68,16 +89,22 @@ export default function EventModal({ isOpen, onClose, onEventCreated }) {
     }
   };
 
-  if (!isOpen) return null;
+  // Check if we're in browser environment for portal
+  if (!isOpen || typeof window === 'undefined') return null;
 
-  return (
-    <>
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999]">
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-emerald-900/50 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 h-full w-full bg-emerald-900/50 backdrop-blur-sm"
+        style={{ minHeight: '100vh', minWidth: '100vw' }}
         onClick={onClose}
+        aria-hidden="true"
       />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-emerald-100">
+
+      {/* Modal container */}
+      <div className="absolute inset-0 flex h-full w-full items-center justify-center overflow-y-auto p-4">
+        <div className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-emerald-100 max-h-[90vh]">
           <div className="flex items-center justify-between border-b border-emerald-100 px-6 py-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-emerald-500">
@@ -107,65 +134,92 @@ export default function EventModal({ isOpen, onClose, onEventCreated }) {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 px-6 py-6">
-            <div>
-              <label className="text-sm font-medium text-emerald-900">
-                Title
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Sunrise cleanup at Ocean Beach"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-1 flex-col overflow-hidden"
+          >
+            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
               <div>
                 <label className="text-sm font-medium text-emerald-900">
-                  When
+                  Title *
                 </label>
                 <input
-                  type="datetime-local"
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Sunrise cleanup at Ocean Beach"
                 />
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium text-emerald-900">
+                    When *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-emerald-900">
+                    Location
+                  </label>
+                  <input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Golden Gate Park"
+                  />
+                </div>
+              </div>
+
+              {/* Group Selector */}
               <div>
                 <label className="text-sm font-medium text-emerald-900">
-                  Location
+                  Hosting Group (optional)
                 </label>
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                <select
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
                   className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Golden Gate Park"
+                >
+                  <option value="">No group - personal event</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-emerald-500">
+                  Associate this event with a group you created or belong to
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-emerald-900">
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Share any details, supplies to bring, or meetup instructions."
                 />
               </div>
+
+              {error && (
+                <div className="text-sm text-red-600" role="alert">
+                  {error}
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-emerald-900">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="mt-1 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-emerald-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Share any details, supplies to bring, or meetup instructions."
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-red-600" role="alert">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-3 border-t border-emerald-100 pt-4">
+            <div className="flex items-center justify-end gap-3 border-t border-emerald-100 px-6 py-4">
               <button
                 type="button"
                 onClick={onClose}
@@ -185,6 +239,8 @@ export default function EventModal({ isOpen, onClose, onEventCreated }) {
           </form>
         </div>
       </div>
-    </>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -120,6 +120,12 @@ export async function POST(request) {
       ]
     );
 
+    // Automatically RSVP the creator to their own event
+    await pool.query(
+      'INSERT INTO event_rsvps (eventId, userId, createdAt) VALUES (?, ?, ?)',
+      [result.insertId, userId, createdAt]
+    );
+
     const event = await fetchEventWithMeta(result.insertId, currentUser.id);
 
     return NextResponse.json({ event }, { status: 201 });

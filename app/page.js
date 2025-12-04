@@ -1,14 +1,28 @@
 import { initializeDatabase } from '@/lib/initDb';
-import PostsPage from './components/PostsPage';
+import EventsPage from './components/EventsPage';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { Leaf } from 'lucide-react';
-import CreatePostFab from './components/CreatePostFab';
-import { fetchCombinedFeed } from '@/lib/feedQueries';
+import { fetchEventsFeed } from '@/lib/feedQueries';
+import pool from '@/lib/db';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
+
+async function getGroups() {
+  try {
+    const [groups] = await pool.query(`
+      SELECT id, name
+      FROM \`groups\`
+      ORDER BY name ASC
+    `);
+    return groups;
+  } catch (err) {
+    console.error('Error fetching groups:', err);
+    return [];
+  }
+}
 
 export default async function Home() {
   const currentUser = await getCurrentUser();
@@ -17,7 +31,10 @@ export default async function Home() {
   }
 
   await initializeDatabase();
-  const feedItems = await fetchCombinedFeed(currentUser.id);
+  const [events, groups] = await Promise.all([
+    fetchEventsFeed(currentUser.id),
+    getGroups(),
+  ]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -41,12 +58,6 @@ export default async function Home() {
               </Link>
               <Link
                 className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
-                href="/events"
-              >
-                Events
-              </Link>
-              <Link
-                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
                 href="/groups"
               >
                 Groups
@@ -67,26 +78,28 @@ export default async function Home() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 pb-24">
-        {feedItems.length === 0 && (
+        {events.length === 0 && (
           <section className="mb-8 rounded-3xl bg-white/80 p-8 text-center shadow-sm ring-1 ring-emerald-100 backdrop-blur">
             <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 text-2xl">
               🌱
             </div>
             <h2 className="text-2xl font-semibold text-emerald-950">
-              Hi {currentUser.name?.split(' ')[0] || 'friend'}, ready to share?
+              Hi {currentUser.name?.split(' ')[0] || 'friend'}, ready to gather?
             </h2>
             <p className="mt-2 text-sm text-emerald-700">
-              Your feed is quiet—tap the plus button to plant the first idea
-              today.
+              Your feed is quiet—create an event to bring the community
+              together.
             </p>
           </section>
         )}
 
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <PostsPage initialFeed={feedItems} currentUser={currentUser} />
+          <EventsPage
+            initialEvents={events}
+            currentUser={currentUser}
+            groups={groups}
+          />
         </section>
-
-        <CreatePostFab currentUser={currentUser} />
       </main>
     </div>
   );

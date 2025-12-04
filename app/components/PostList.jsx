@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 const MAX_REPLY_CHARS = 280;
 
@@ -312,11 +313,16 @@ export default function PostList({
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-emerald-900">
+                  <Link
+                    href="/profile"
+                    className="font-semibold text-emerald-900 hover:underline"
+                  >
                     {post.authorName || 'Unknown User'}
-                  </h3>
+                  </Link>
                   <div className="flex items-center text-sm text-emerald-600 mt-0.5">
-                    <span>@{post.authorHandle}</span>
+                    <Link href="/profile" className="hover:underline">
+                      @{post.authorHandle}
+                    </Link>
                     <span className="mx-2">·</span>
                     <time dateTime={post.createdAt}>
                       {formatDate(post.createdAt)}

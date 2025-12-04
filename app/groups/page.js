@@ -70,6 +70,11 @@ async function getGroups(userId) {
   }
 }
 
+const navLinks = [
+  { href: '/', label: 'Feed' },
+  { href: '/groups', label: 'Groups' },
+];
+
 export default async function Page() {
   const currentUser = await getCurrentUser();
   if (!currentUser) {

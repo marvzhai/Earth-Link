@@ -11,7 +11,11 @@ const FILTERS = [
   { label: 'All', value: 'all' },
 ];
 
-export default function EventsPage({ initialEvents = [], currentUser }) {
+export default function EventsPage({
+  initialEvents = [],
+  currentUser,
+  groups = [],
+}) {
   const [events, setEvents] = useState(initialEvents);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState('upcoming');
@@ -27,6 +31,12 @@ export default function EventsPage({ initialEvents = [], currentUser }) {
 
   const handleEventDeleted = (id) => {
     setEvents((prev) => prev.filter((event) => event.id !== id));
+  };
+
+  const handleEventUpdated = (updatedEvent) => {
+    setEvents((prev) =>
+      prev.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
+    );
   };
 
   const handleCreateClick = () => {
@@ -93,11 +103,13 @@ export default function EventsPage({ initialEvents = [], currentUser }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onEventCreated={handleEventCreated}
+        groups={groups}
       />
 
       <EventList
         events={filteredEvents}
         onEventDeleted={handleEventDeleted}
+        onEventUpdated={handleEventUpdated}
         currentUser={currentUser}
       />
     </>
