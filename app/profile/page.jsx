@@ -43,11 +43,10 @@ async function getUserData(userId) {
       [userId]
     );
 
-    const [groupCountRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM `groups` WHERE creatorId = ?',
-      [userId]
-    );
+    
     const groupCount = groupCountRows[0]?.count || 0;
+    const eventCount = eventCountRows[0]?.count || 0;
+
 
     const [events] = await pool.query(
       `SELECT 
