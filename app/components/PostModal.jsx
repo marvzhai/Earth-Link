@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from 'react';
 
+const MAX_CHARS = 280;
+const MAX_IMAGES = 4;
+const MAX_IMAGE_SIZE_MB = 2;
+
+const generateImageId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
 export default function PostModal({
   isOpen,
   onClose,
@@ -9,10 +18,11 @@ export default function PostModal({
   currentUser,
 }) {
   const [body, setBody] = useState('');
+  const [images, setImages] = useState([]);
+  const [imageError, setImageError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [charCount, setCharCount] = useState(0);
-  const maxChars = 280;
 
   // Close modal on Escape key
   useEffect(() => {
@@ -29,6 +39,17 @@ export default function PostModal({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setBody('');
+      setCharCount(0);
+      setImages([]);
+      setImageError('');
+      setError('');
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
   const handleBodyChange = (e) => {
     const text = e.target.value;
     setBody(text);
@@ -38,14 +59,15 @@ export default function PostModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setImageError('');
 
     if (!body.trim()) {
       setError('Post body cannot be empty');
       return;
     }
 
-    if (body.length > maxChars) {
-      setError(`Post exceeds maximum length of ${maxChars} characters`);
+    if (body.length > MAX_CHARS) {
+      setError(`Post exceeds maximum length of ${MAX_CHARS} characters`);
       return;
     }
 
@@ -57,7 +79,10 @@ export default function PostModal({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ body: body.trim() }),
+        body: JSON.stringify({
+          body: body.trim(),
+          images: images.map((image) => image.dataUrl),
+        }),
       });
 
       const data = await response.json();
@@ -73,8 +98,10 @@ export default function PostModal({
 
       setBody('');
       setCharCount(0);
+      setImages([]);
+      setImageError('');
       setError('');
-      onPostCreated(data.post);
+      onPostCreated?.(data.post);
       onClose();
     } catch (err) {
       setError(err.message);
@@ -85,37 +112,111 @@ export default function PostModal({
 
   if (!isOpen || !currentUser) return null;
 
-  const isNearLimit = charCount > maxChars * 0.8;
-  const isOverLimit = charCount > maxChars;
+  const isNearLimit = charCount > MAX_CHARS * 0.8;
+  const isOverLimit = charCount > MAX_CHARS;
+
+  const handleImageChange = async (event) => {
+    setImageError('');
+    const input = event.target;
+    const files = Array.from(input.files || []);
+
+    if (files.length === 0) {
+      input.value = '';
+      return;
+    }
+
+    const availableSlots = MAX_IMAGES - images.length;
+    if (availableSlots <= 0) {
+      setImageError(`You can upload up to ${MAX_IMAGES} images per post.`);
+      input.value = '';
+      return;
+    }
+
+    const filesToProcess = files.slice(0, availableSlots);
+    const validFiles = [];
+
+    for (const file of filesToProcess) {
+      if (!file.type.startsWith('image/')) {
+        setImageError('Only image files are supported.');
+        continue;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        setImageError(
+          `Each image must be smaller than ${MAX_IMAGE_SIZE_MB}MB.`
+        );
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      input.value = '';
+      return;
+    }
+
+    try {
+      const newImages = await Promise.all(
+        validFiles.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () =>
+                resolve({
+                  id: generateImageId(),
+                  dataUrl: reader.result?.toString() || '',
+                });
+              reader.onerror = () =>
+                reject(new Error('Failed to read selected file.'));
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+
+      setImages((prev) => [
+        ...prev,
+        ...newImages.filter((image) => image.dataUrl),
+      ]);
+    } catch (err) {
+      setImageError(err.message || 'Unable to read one of the files.');
+    } finally {
+      input.value = '';
+    }
+  };
+
+  const handleRemoveImage = (imageId) => {
+    setImages((prev) => prev.filter((image) => image.id !== imageId));
+  };
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        className="fixed inset-0 z-40 bg-emerald-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[85vh] overflow-hidden">
+        <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-emerald-100 max-h-[85vh]">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-stone-200">
+          <div className="flex items-center justify-between border-b border-emerald-100 p-6">
             <div>
-              <h2 className="text-xl font-semibold text-stone-800">
+              <h2 className="text-xl font-semibold text-emerald-900">
                 Create a Post
               </h2>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-emerald-600">
                 Posting as {currentUser.name}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-stone-400 hover:text-stone-700 transition-colors"
+              className="text-emerald-400 transition-colors hover:text-emerald-700"
               aria-label="Close"
             >
               <svg
-                className="w-5 h-5"
+                className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -131,52 +232,119 @@ export default function PostModal({
           </div>
 
           {/* Content */}
-          <form onSubmit={handleSubmit} className="p-6">
-            <textarea
-              value={body}
-              onChange={handleBodyChange}
-              placeholder="What's on your mind?"
-              className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-800 focus:border-transparent resize-none text-stone-800 transition-all ${
-                isOverLimit
-                  ? 'border-red-400 focus:ring-red-500'
-                  : 'border-stone-200'
-              }`}
-              rows="8"
-              disabled={isSubmitting}
-              autoFocus
-            />
-
-            {/* Character counter */}
-            <div className="mt-3 flex items-center justify-between">
-              <span
-                className={`text-sm ${
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-1 flex-col overflow-hidden"
+          >
+            <div className="flex-1 space-y-4 overflow-y-auto p-6 pr-4">
+              <textarea
+                value={body}
+                onChange={handleBodyChange}
+                placeholder="What's on your mind?"
+                className={`w-full resize-none rounded-2xl border bg-emerald-50/60 p-4 text-emerald-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                   isOverLimit
-                    ? 'text-red-600'
-                    : isNearLimit
-                    ? 'text-amber-600'
-                    : 'text-stone-400'
+                    ? 'border-red-400 bg-white focus:ring-red-500'
+                    : 'border-emerald-100'
                 }`}
-              >
-                {charCount} / {maxChars}
-              </span>
+                rows="8"
+                disabled={isSubmitting}
+                autoFocus
+              />
 
-              {error && <span className="text-sm text-red-600">{error}</span>}
+              {/* Character counter */}
+              <div className="flex items-center justify-between">
+                <span
+                  className={`text-sm ${
+                    isOverLimit
+                      ? 'text-red-600'
+                      : isNearLimit
+                      ? 'text-amber-600'
+                      : 'text-emerald-500'
+                  }`}
+                >
+                  {charCount} / {MAX_CHARS}
+                </span>
+
+                {error && <span className="text-sm text-red-600">{error}</span>}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm font-medium text-emerald-900">
+                  <span>Add images</span>
+                  <span className="text-emerald-500">
+                    {images.length} / {MAX_IMAGES}
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  disabled={isSubmitting}
+                  className="w-full cursor-pointer rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/40 px-4 py-6 text-sm text-emerald-700 transition hover:border-emerald-400"
+                />
+                {imageError && (
+                  <p className="text-sm text-red-600">{imageError}</p>
+                )}
+                {images.length > 0 && (
+                  <div
+                    className={`grid gap-3 ${
+                      images.length === 1 ? '' : 'sm:grid-cols-2'
+                    }`}
+                  >
+                    {images.map((image) => (
+                      <div
+                        key={image.id}
+                        className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50/50"
+                      >
+                        <img
+                          src={image.dataUrl}
+                          alt="Selected preview"
+                          className="h-48 w-full object-cover"
+                          loading="lazy"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove image"
+                          className="absolute right-3 top-3 rounded-full bg-emerald-900/70 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                          onClick={() => handleRemoveImage(image.id)}
+                          disabled={isSubmitting}
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 border-t border-emerald-100 bg-white/95 p-6">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-5 py-2 text-stone-700 hover:bg-stone-100 rounded-lg disabled:opacity-50 transition-colors font-medium"
+                className="rounded-full px-5 py-2 text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !body.trim() || isOverLimit}
-                className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:bg-stone-300 disabled:cursor-not-allowed transition-colors font-medium"
+                className="rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-6 py-2 text-white shadow-sm transition hover:shadow disabled:cursor-not-allowed disabled:bg-emerald-300"
               >
                 {isSubmitting ? 'Posting...' : 'Post'}
               </button>

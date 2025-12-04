@@ -2,34 +2,22 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import { getCurrentUser } from '@/lib/auth';
+import { fetchPostWithMeta } from '@/lib/postQueries';
 
 // GET /api/posts/[id] - Get a single post
 export async function GET(request, { params }) {
   try {
     await initializeDatabase();
     const { id } = params;
-    
-    const [posts] = await pool.query(`
-      SELECT 
-        posts.id,
-        posts.body,
-        posts.createdAt,
-        posts.authorId,
-        users.handle as authorHandle,
-        users.name as authorName
-      FROM posts
-      JOIN users ON posts.authorId = users.id
-      WHERE posts.id = ?
-    `, [id]);
+    const currentUser = await getCurrentUser();
 
-    if (posts.length === 0) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
+    const post = await fetchPostWithMeta(id, currentUser?.id);
+
+    if (!post) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ post: posts[0] });
+    return NextResponse.json({ post });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch post', message: error.message },
@@ -66,12 +54,9 @@ export async function PATCH(request, { params }) {
       'SELECT id, authorId FROM posts WHERE id = ?',
       [id]
     );
-    
+
     if (existingPosts.length === 0) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
     if (existingPosts[0].authorId !== currentUser.id) {
@@ -82,26 +67,14 @@ export async function PATCH(request, { params }) {
     }
 
     // Update the post
-    await pool.query(
-      'UPDATE posts SET body = ? WHERE id = ?',
-      [body.trim(), id]
-    );
+    await pool.query('UPDATE posts SET body = ? WHERE id = ?', [
+      body.trim(),
+      id,
+    ]);
 
-    // Fetch the updated post
-    const [posts] = await pool.query(`
-      SELECT 
-        posts.id,
-        posts.body,
-        posts.createdAt,
-        posts.authorId,
-        users.handle as authorHandle,
-        users.name as authorName
-      FROM posts
-      JOIN users ON posts.authorId = users.id
-      WHERE posts.id = ?
-    `, [id]);
+    const post = await fetchPostWithMeta(id, currentUser.id);
 
-    return NextResponse.json({ post: posts[0] });
+    return NextResponse.json({ post });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to update post', message: error.message },
@@ -129,12 +102,9 @@ export async function DELETE(request, { params }) {
       'SELECT id, authorId FROM posts WHERE id = ?',
       [id]
     );
-    
+
     if (existingPosts.length === 0) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
     if (existingPosts[0].authorId !== currentUser.id) {

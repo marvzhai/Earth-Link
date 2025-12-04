@@ -1,4 +1,6 @@
 import AuthForm from "@/app/components/AuthForm"
+import { Leaf } from 'lucide-react';
+
 export default function LoginPage() {
     return (
         <div
@@ -6,7 +8,7 @@ export default function LoginPage() {
         >
             <div className="flex flex-col items-center mb-8">
                 <div className="bg-green-600 text-white p-4 rounded-full mb-4">
-                    <span className="text-2xl">🍃</span>
+                    <span className="text-2xl"><Leaf className="h-7 w-7" /></span>
                 </div>
 
                 <h1 className="text-xl font-semibold text-gray-800">EarthLink</h1>
