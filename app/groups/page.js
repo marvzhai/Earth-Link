@@ -2,31 +2,68 @@ import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
 import GroupsPage from '@/app/components/GroupsPage';
 import { getCurrentUser } from '@/lib/auth';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { Leaf } from 'lucide-react';
 
 // Mark page as dynamic to allow DB access
 export const dynamic = 'force-dynamic';
 
-async function getGroups() {
+function parseStoredImages(imageData) {
+  if (!imageData) return [];
+  if (Array.isArray(imageData)) {
+    return imageData.filter(
+      (v) => typeof v === 'string' && v.startsWith('data:image/')
+    );
+  }
+  if (typeof imageData === 'string') {
+    try {
+      const parsed = JSON.parse(imageData);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (v) => typeof v === 'string' && v.startsWith('data:image/')
+        );
+      }
+    } catch {
+      if (imageData.startsWith('data:image/')) return [imageData];
+    }
+  }
+  return [];
+}
+
+async function getGroups(userId) {
   try {
     await initializeDatabase();
-    const [groups] = await pool.query(`
+    const [groups] = await pool.query(
+      `
       SELECT
         \`groups\`.id,
         \`groups\`.name,
         \`groups\`.location,
         \`groups\`.description,
+        \`groups\`.websiteUrl,
+        \`groups\`.iconData,
+        \`groups\`.imageData,
         \`groups\`.createdAt,
         \`groups\`.creatorId,
         users.handle as creatorHandle,
-        users.name as creatorName
+        users.name as creatorName,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id) AS memberCount,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id AND group_members.userId = ?) > 0 AS isMember
       FROM \`groups\`
       JOIN users ON \`groups\`.creatorId = users.id
       ORDER BY \`groups\`.createdAt DESC
-    `);
-    return groups;
+    `,
+      [userId ?? -1]
+    );
+
+    // Parse imageData for each group
+    return groups.map((group) => ({
+      ...group,
+      images: parseStoredImages(group.imageData),
+      memberCount: Number(group.memberCount) || 0,
+      isMember: Boolean(Number(group.isMember)),
+    }));
   } catch (err) {
     console.error('Error fetching groups:', err);
     return [];
@@ -44,7 +81,7 @@ export default async function Page() {
     redirect('/login');
   }
 
-  const groups = await getGroups();
+  const groups = await getGroups(currentUser.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -60,19 +97,24 @@ export default async function Page() {
               </h1>
             </div>
             <div className="ml-6 flex items-center gap-2 text-sm text-emerald-700">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
-                    link.href === '/groups'
-                      ? 'bg-emerald-100 text-emerald-900 shadow-sm'
-                      : ''
-                  }`}
-                  href={link.href}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <Link
+                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
+                href="/"
+              >
+                Feed
+              </Link>
+              <Link
+                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
+                href="/events"
+              >
+                Events
+              </Link>
+              <Link
+                className="rounded-full px-3 py-2 bg-emerald-100 text-emerald-900 shadow-sm transition hover:bg-emerald-50"
+                href="/groups"
+              >
+                Groups
+              </Link>
             </div>
           </div>
 
@@ -88,7 +130,7 @@ export default async function Page() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 pb-24">
+      <main className="mx-auto max-w-3xl px-6 pb-24">
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <GroupsPage initialGroups={groups} currentUser={currentUser} />
         </section>

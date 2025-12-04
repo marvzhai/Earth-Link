@@ -19,14 +19,29 @@ async function getUserData(userId) {
     const user = userRows[0];
 
     if (!user) {
-      return { user: null, eventCount: 0, groupCount: 0, events: [] };
+      return {
+        user: null,
+        postCount: 0,
+        eventCount: 0,
+        groupCount: 0,
+        posts: [],
+      };
     }
+
+    const [postCountRows] = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE authorId = ?',
+      [userId]
+    );
 
     const [eventCountRows] = await pool.query(
       'SELECT COUNT(*) as count FROM events WHERE creatorId = ?',
       [userId]
     );
-    const eventCount = eventCountRows[0]?.count || 0;
+
+    const [groupCountRows] = await pool.query(
+      'SELECT COUNT(*) as count FROM `groups` WHERE creatorId = ?',
+      [userId]
+    );
 
     const [groupCountRows] = await pool.query(
       'SELECT COUNT(*) as count FROM `groups` WHERE creatorId = ?',
@@ -174,6 +189,24 @@ export default async function ProfilePage() {
                     {joinDate}
                   </span>
                 </div>
+              </div>
+
+              {/* Join date */}
+              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-emerald-500 sm:justify-start">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Joined {joinDate}</span>
               </div>
             </div>
           </div>
