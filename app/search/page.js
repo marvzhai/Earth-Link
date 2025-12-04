@@ -1,74 +1,10 @@
-import pool from '@/lib/db';
-import { initializeDatabase } from '@/lib/initDb';
-import GroupsPage from '@/app/components/GroupsPage';
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Leaf } from 'lucide-react';
+import SearchClient from '../components/SearchClient';
 
-// Mark page as dynamic to allow DB access
 export const dynamic = 'force-dynamic';
-
-function parseStoredImages(imageData) {
-  if (!imageData) return [];
-  if (Array.isArray(imageData)) {
-    return imageData.filter(
-      (v) => typeof v === 'string' && v.startsWith('data:image/')
-    );
-  }
-  if (typeof imageData === 'string') {
-    try {
-      const parsed = JSON.parse(imageData);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (v) => typeof v === 'string' && v.startsWith('data:image/')
-        );
-      }
-    } catch {
-      if (imageData.startsWith('data:image/')) return [imageData];
-    }
-  }
-  return [];
-}
-
-async function getGroups(userId) {
-  try {
-    await initializeDatabase();
-    const [groups] = await pool.query(
-      `
-      SELECT
-        \`groups\`.id,
-        \`groups\`.name,
-        \`groups\`.location,
-        \`groups\`.description,
-        \`groups\`.websiteUrl,
-        \`groups\`.iconData,
-        \`groups\`.imageData,
-        \`groups\`.createdAt,
-        \`groups\`.creatorId,
-        users.handle as creatorHandle,
-        users.name as creatorName,
-        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id) AS memberCount,
-        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id AND group_members.userId = ?) > 0 AS isMember
-      FROM \`groups\`
-      JOIN users ON \`groups\`.creatorId = users.id
-      ORDER BY \`groups\`.createdAt DESC
-    `,
-      [userId ?? -1]
-    );
-
-    // Parse imageData for each group
-    return groups.map((group) => ({
-      ...group,
-      images: parseStoredImages(group.imageData),
-      memberCount: Number(group.memberCount) || 0,
-      isMember: Boolean(Number(group.isMember)),
-    }));
-  } catch (err) {
-    console.error('Error fetching groups:', err);
-    return [];
-  }
-}
 
 const navLinks = [
   { href: '/events', label: 'Events' },
@@ -76,15 +12,13 @@ const navLinks = [
   { href: '/groups', label: 'Groups' },
 ];
 
-export default async function Page({ searchParams }) {
+export default async function SearchPage({ searchParams }) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     redirect('/login');
   }
 
-  const groups = await getGroups(currentUser.id);
-  const params = await searchParams;
-  const viewGroupId = params?.view ? parseInt(params.view, 10) : null;
+  const initialQuery = searchParams?.q || '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -106,11 +40,7 @@ export default async function Page({ searchParams }) {
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
-                    link.href === '/groups'
-                      ? 'bg-emerald-100 text-emerald-900 shadow-sm'
-                      : ''
-                  }`}
+                  className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
                   href={link.href}
                 >
                   {link.label}
@@ -122,8 +52,7 @@ export default async function Page({ searchParams }) {
           <div className="flex items-center gap-3">
             <Link
               href="/search"
-              className="rounded-full bg-emerald-50 p-2.5 text-emerald-600 transition hover:bg-emerald-100"
-              title="Search"
+              className="rounded-full bg-emerald-100 p-2.5 text-emerald-700 transition hover:bg-emerald-200"
             >
               <svg
                 className="h-5 w-5"
@@ -154,11 +83,7 @@ export default async function Page({ searchParams }) {
 
       <main className="mx-auto max-w-3xl px-6 pb-24">
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <GroupsPage
-            initialGroups={groups}
-            currentUser={currentUser}
-            initialViewGroupId={viewGroupId}
-          />
+          <SearchClient initialQuery={initialQuery} />
         </section>
       </main>
     </div>
