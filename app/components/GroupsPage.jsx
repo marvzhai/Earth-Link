@@ -5,7 +5,11 @@ import { useState, useEffect } from 'react';
 import GroupModal from './GroupModal';
 import GroupList from './GroupList';
 
-export default function GroupsPage({ initialGroups, currentUser }) {
+export default function GroupsPage({
+  initialGroups,
+  currentUser,
+  initialViewGroupId,
+}) {
   const [groups, setGroups] = useState(initialGroups || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
@@ -82,6 +86,7 @@ export default function GroupsPage({ initialGroups, currentUser }) {
         onGroupDeleted={handleGroupDeleted}
         onGroupUpdated={handleGroupUpdated}
         currentUser={currentUser}
+        initialViewGroupId={initialViewGroupId}
       />
     </>
   );

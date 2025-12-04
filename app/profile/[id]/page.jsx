@@ -13,7 +13,7 @@ async function getUserData(userId) {
     await initializeDatabase();
 
     const [userRows] = await pool.query(
-      'SELECT * FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, name, handle, createdAt FROM users WHERE id = ? LIMIT 1',
       [userId]
     );
     const user = userRows[0];
@@ -27,22 +27,8 @@ async function getUserData(userId) {
         eventReplies: [],
       };
     }
-    
-    const [eventCountRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM events WHERE creatorId = ?',
-      [userId]
-    );
 
-    const [groupCountRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM `groups` WHERE creatorId = ?',
-      [userId]
-    );
-
-    
-    const groupCount = groupCountRows[0]?.count || 0;
-    const eventCount = eventCountRows[0]?.count || 0;
-
-
+    // Get events created by user
     const [events] = await pool.query(
       `SELECT 
         events.id,
@@ -165,18 +151,26 @@ function formatDate(dateString) {
   });
 }
 
-export default async function ProfilePage() {
+export default async function UserProfilePage({ params }) {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
     redirect('/login');
   }
 
+  const { id } = await params;
+  const profileUserId = parseInt(id, 10);
+
+  // If viewing own profile, redirect to /profile
+  if (profileUserId === currentUser.id) {
+    redirect('/profile');
+  }
+
   const { user, events, groups, memberGroups, eventReplies } =
-    await getUserData(currentUser.id);
+    await getUserData(profileUserId);
 
   if (!user) {
-    redirect('/');
+    redirect('/events');
   }
 
   const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', {
@@ -215,41 +209,15 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <form action="/api/auth/logout" method="POST">
-              <button
-                type="submit"
-                className="rounded-full px-4 py-2 text-sm text-emerald-600 transition hover:bg-emerald-50"
-              >
-                Log out
-              </button>
-            </form>
-            <Link
-              href="/search"
-              className="rounded-full bg-emerald-50 p-2.5 text-emerald-600 transition hover:bg-emerald-100"
-              title="Search"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </Link>
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-500 text-xs font-semibold text-white">
-                {currentUser.name?.[0]?.toUpperCase() || 'U'}
-              </span>
-              Profile
-            </div>
-          </div>
+          <Link
+            href="/profile"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow ring-1 ring-emerald-400/50 transition hover:shadow-md"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
+              {currentUser.name?.[0]?.toUpperCase() || 'U'}
+            </span>
+            Profile
+          </Link>
         </div>
       </header>
 
@@ -257,7 +225,7 @@ export default async function ProfilePage() {
         {/* Profile Card */}
         <section className="rounded-3xl bg-white/90 p-8 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex items-start gap-6">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 text-4xl font-semibold text-white flex-shrink-0">
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 text-4xl font-semibold text-white flex-shrink-0">
               {user.name?.[0]?.toUpperCase() || 'U'}
             </div>
 
@@ -266,7 +234,6 @@ export default async function ProfilePage() {
                 {user.name}
               </h2>
               <p className="text-lg text-emerald-600">@{user.handle}</p>
-              <p className="mt-1 text-sm text-emerald-500">{user.email}</p>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <div className="rounded-2xl bg-emerald-50 px-4 py-2 text-sm">
@@ -294,28 +261,6 @@ export default async function ProfilePage() {
                   </span>
                 </div>
               </div>
-
-              <div className="mt-6">
-                <Link
-                  href="/settings"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-200"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                  Edit profile
-                </Link>
-              </div>
             </div>
           </div>
         </section>
@@ -323,9 +268,7 @@ export default async function ProfilePage() {
         {/* Events Section */}
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-emerald-900">
-              Your Events
-            </h3>
+            <h3 className="text-xl font-semibold text-emerald-900">Events</h3>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-700">
               {events.length}
             </span>
@@ -335,14 +278,8 @@ export default async function ProfilePage() {
             <div className="py-12 text-center">
               <div className="mb-4 text-4xl">📅</div>
               <p className="text-emerald-600">
-                You haven&apos;t created any events yet.
+                {user.name} hasn&apos;t created any events yet.
               </p>
-              <Link
-                href="/events"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:shadow-md"
-              >
-                Create your first event
-              </Link>
             </div>
           ) : (
             <div className="space-y-4">
@@ -438,9 +375,7 @@ export default async function ProfilePage() {
         {/* Groups Section */}
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-emerald-900">
-              Your Groups
-            </h3>
+            <h3 className="text-xl font-semibold text-emerald-900">Groups</h3>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-700">
               {allGroups.length}
             </span>
@@ -450,21 +385,16 @@ export default async function ProfilePage() {
             <div className="py-12 text-center">
               <div className="mb-4 text-4xl">🌿</div>
               <p className="text-emerald-600">
-                You haven&apos;t joined any groups yet.
+                {user.name} hasn&apos;t joined any groups yet.
               </p>
-              <Link
-                href="/groups"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:shadow-md"
-              >
-                Explore groups
-              </Link>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* Groups you created */}
+              {/* Groups they created */}
               {groups.map((group) => (
-                <article
+                <Link
                   key={`created-${group.id}`}
+                  href={`/groups?view=${group.id}`}
                   className="rounded-2xl border border-emerald-100 bg-white/80 p-4 transition hover:border-emerald-200"
                 >
                   <div className="flex items-start gap-3">
@@ -476,7 +406,8 @@ export default async function ProfilePage() {
                         {group.name}
                       </h4>
                       <p className="text-xs text-emerald-500">
-                        Created by you · {group.memberCount || 0} members
+                        Created by {user.name} · {group.memberCount || 0}{' '}
+                        members
                       </p>
                       {group.location && (
                         <p className="mt-1 text-sm text-emerald-600">
@@ -485,13 +416,14 @@ export default async function ProfilePage() {
                       )}
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
 
-              {/* Groups you're a member of */}
+              {/* Groups they're a member of */}
               {memberGroups.map((group) => (
-                <article
+                <Link
                   key={`member-${group.id}`}
+                  href={`/groups?view=${group.id}`}
                   className="rounded-2xl border border-emerald-100 bg-white/80 p-4 transition hover:border-emerald-200"
                 >
                   <div className="flex items-start gap-3">
@@ -504,12 +436,12 @@ export default async function ProfilePage() {
                       </h4>
                       <p className="text-xs text-emerald-500">
                         By{' '}
-                        <Link
-                          href={`/profile/${group.creatorId}`}
+                        <span
+                          onClick={(e) => e.stopPropagation()}
                           className="hover:underline"
                         >
                           {group.creatorName}
-                        </Link>{' '}
+                        </span>{' '}
                         · {group.memberCount || 0} members
                       </p>
                       {group.location && (
@@ -519,7 +451,7 @@ export default async function ProfilePage() {
                       )}
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}
@@ -528,9 +460,7 @@ export default async function ProfilePage() {
         {/* Comments Section */}
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-emerald-900">
-              Your Comments
-            </h3>
+            <h3 className="text-xl font-semibold text-emerald-900">Comments</h3>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-700">
               {eventReplies.length}
             </span>
@@ -540,14 +470,8 @@ export default async function ProfilePage() {
             <div className="py-12 text-center">
               <div className="mb-4 text-4xl">💬</div>
               <p className="text-emerald-600">
-                You haven&apos;t commented on any events yet.
+                {user.name} hasn&apos;t commented on any events yet.
               </p>
-              <Link
-                href="/events"
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 px-5 py-2.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
-              >
-                Browse events
-              </Link>
             </div>
           ) : (
             <div className="space-y-4">

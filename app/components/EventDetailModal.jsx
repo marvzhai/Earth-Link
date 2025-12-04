@@ -106,7 +106,7 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
               <div>
                 <p className="text-sm text-emerald-600">Hosted by</p>
                 <Link
-                  href="/profile"
+                  href={`/profile/${event.creatorId}`}
                   onClick={onClose}
                   className="font-medium text-emerald-900 hover:underline"
                 >
@@ -121,7 +121,7 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
             {/* Group Info */}
             {event.groupId && event.groupName && (
               <Link
-                href="/groups"
+                href={`/groups?view=${event.groupId}`}
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-700 transition hover:bg-emerald-100"
               >
@@ -182,6 +182,33 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
               </svg>
               <span>{event.location || 'Location TBA'}</span>
             </div>
+
+            {/* Event Images */}
+            {event.images && event.images.length > 0 && (
+              <div
+                className={`${
+                  event.images.length === 1
+                    ? 'overflow-hidden rounded-2xl border border-emerald-100'
+                    : 'grid gap-2 sm:grid-cols-2'
+                }`}
+              >
+                {event.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`overflow-hidden ${
+                      event.images.length === 1 ? '' : 'rounded-xl border border-emerald-100'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Event image ${idx + 1}`}
+                      className="h-48 w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Description */}
             {event.description ? (

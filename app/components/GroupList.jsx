@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import GroupDetailModal from './GroupDetailModal';
 import GroupModal from './GroupModal';
 
@@ -21,10 +22,29 @@ export default function GroupList({
   onGroupDeleted,
   onGroupUpdated,
   currentUser,
+  initialViewGroupId,
 }) {
   const [deletingId, setDeletingId] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
+  const router = useRouter();
+
+  // Auto-open group detail modal if initialViewGroupId is provided
+  useEffect(() => {
+    if (initialViewGroupId && groups?.length > 0) {
+      const groupToView = groups.find((g) => g.id === initialViewGroupId);
+      if (groupToView) {
+        setSelectedGroup(groupToView);
+      }
+    }
+  }, [initialViewGroupId, groups]);
+
+  // Clear the URL param when modal is closed
+  const handleCloseDetailModal = () => {
+    setSelectedGroup(null);
+    // Remove the view param from URL
+    router.replace('/groups', { scroll: false });
+  };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this group?')) return;
@@ -303,8 +323,9 @@ export default function GroupList({
       {/* Group Detail Modal */}
       <GroupDetailModal
         isOpen={!!selectedGroup}
-        onClose={() => setSelectedGroup(null)}
+        onClose={handleCloseDetailModal}
         group={selectedGroup}
+        currentUser={currentUser}
         onGroupUpdated={(updatedGroup) => {
           setSelectedGroup(updatedGroup);
           onGroupUpdated?.(updatedGroup);
