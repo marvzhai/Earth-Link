@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { Leaf } from 'lucide-react';
 import CreatePostFab from './components/CreatePostFab';
-import { fetchAllPostsWithMeta } from '@/lib/postQueries';
+import { fetchCombinedFeed } from '@/lib/feedQueries';
 
 // Mark page as dynamic to avoid build-time database access
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ export default async function Home() {
   }
 
   await initializeDatabase();
-  const posts = await fetchAllPostsWithMeta(currentUser.id);
+  const feedItems = await fetchCombinedFeed(currentUser.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
@@ -34,7 +34,7 @@ export default async function Home() {
             </div>
             <div className="ml-6 flex items-center gap-2 text-sm text-emerald-700">
               <Link
-                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
+                className="rounded-full px-3 py-2 bg-emerald-100 text-emerald-900 shadow-sm transition hover:bg-emerald-50"
                 href="/"
               >
                 Feed
@@ -67,7 +67,7 @@ export default async function Home() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 pb-24">
-        {posts.length === 0 && (
+        {feedItems.length === 0 && (
           <section className="mb-8 rounded-3xl bg-white/80 p-8 text-center shadow-sm ring-1 ring-emerald-100 backdrop-blur">
             <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 text-2xl">
               🌱
@@ -83,7 +83,7 @@ export default async function Home() {
         )}
 
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <PostsPage initialPosts={posts} currentUser={currentUser} />
+          <PostsPage initialFeed={feedItems} currentUser={currentUser} />
         </section>
 
         <CreatePostFab currentUser={currentUser} />
