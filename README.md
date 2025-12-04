@@ -15,6 +15,7 @@ docker compose up --build
 - ✅ MySQL database runs in Docker
 - ✅ Next.js frontend runs in Docker
 - ✅ **Hot reload enabled** - edit any file → save → see changes instantly! 🔥
+- ✅ **Schema auto-initializes** on first request—no manual SQL setup needed
 
 ---
 
@@ -77,12 +78,14 @@ npm run dev              # Requires MySQL running locally
 When you run `docker compose up`:
 
 **MySQL (Backend)**
+
 - Port: 3307 (external), 3306 (internal)
 - Database: `earthlink_db`
 - User: `earthlink`
 - Password: `earthlink_password`
 
 **Next.js (Frontend)**
+
 - Port: 3000
 - Hot reload: ✅ Enabled
 - Environment: Development
@@ -116,9 +119,11 @@ docker-compose.yml       # Services configuration
 ## API Endpoints
 
 ### Health Check
+
 - `GET /api/health` - Check API and database status
 
 ### Posts
+
 - `GET /api/posts` - List all posts
 - `POST /api/posts` - Create a new post
 - `GET /api/posts/[id]` - Get a single post
@@ -130,6 +135,7 @@ docker-compose.yml       # Services configuration
 ## Database Schema
 
 ### users
+
 ```sql
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -141,6 +147,7 @@ CREATE TABLE users (
 ```
 
 ### posts
+
 ```sql
 CREATE TABLE posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -184,6 +191,7 @@ environment:
 ### Data Persistence
 
 Database data is stored in Docker volume `mysql_data`:
+
 - Survives container restarts
 - Persists after `docker compose down`
 - To reset: `docker compose down -v`
@@ -247,6 +255,7 @@ If you prefer to run without Docker:
 **1. Install MySQL locally**
 
 **2. Create database:**
+
 ```sql
 CREATE DATABASE earthlink_db;
 CREATE USER 'earthlink'@'localhost' IDENTIFIED BY 'earthlink_password';
@@ -254,6 +263,7 @@ GRANT ALL PRIVILEGES ON earthlink_db.* TO 'earthlink'@'localhost';
 ```
 
 **3. Create `.env.local`:**
+
 ```bash
 NODE_ENV=development
 DB_HOST=localhost
@@ -264,6 +274,7 @@ DB_NAME=earthlink_db
 ```
 
 **4. Run:**
+
 ```bash
 npm install
 npm run dev
