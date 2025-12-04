@@ -103,6 +103,22 @@ export default function GroupList({
                     <h4 className="text-lg font-semibold text-emerald-900">
                       {group.name}
                     </h4>
+                    <p className="text-sm text-emerald-600">
+                      {group.memberCount || 0}{' '}
+                      {group.memberCount === 1 ? 'member' : 'members'}
+                      {group.isMember && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-emerald-500">
+                          <svg
+                            className="h-3 w-3"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                          </svg>
+                          Joined
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
 
@@ -289,6 +305,10 @@ export default function GroupList({
         isOpen={!!selectedGroup}
         onClose={() => setSelectedGroup(null)}
         group={selectedGroup}
+        onGroupUpdated={(updatedGroup) => {
+          setSelectedGroup(updatedGroup);
+          onGroupUpdated?.(updatedGroup);
+        }}
       />
 
       {/* Edit Group Modal */}
