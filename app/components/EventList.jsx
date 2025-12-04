@@ -365,15 +365,18 @@ export default function EventList({
                     </h4>
                     <p className="text-sm text-emerald-600">
                       Hosted by{' '}
-                      <Link href="/profile" className="hover:underline">
+                      <Link
+                        href={`/profile/${event.creatorId}`}
+                        className="hover:underline"
+                      >
                         {event.creatorName || 'Community'}
                       </Link>
-                      {event.groupName && (
+                      {event.groupName && event.groupId && (
                         <>
                           {' '}
                           ·{' '}
                           <Link
-                            href="/groups"
+                            href={`/groups?view=${event.groupId}`}
                             className="inline-flex items-center gap-1 hover:underline"
                           >
                             <svg

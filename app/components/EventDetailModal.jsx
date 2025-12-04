@@ -106,7 +106,7 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
               <div>
                 <p className="text-sm text-emerald-600">Hosted by</p>
                 <Link
-                  href="/profile"
+                  href={`/profile/${event.creatorId}`}
                   onClick={onClose}
                   className="font-medium text-emerald-900 hover:underline"
                 >
@@ -121,7 +121,7 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
             {/* Group Info */}
             {event.groupId && event.groupName && (
               <Link
-                href="/groups"
+                href={`/groups?view=${event.groupId}`}
                 onClick={onClose}
                 className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-700 transition hover:bg-emerald-100"
               >

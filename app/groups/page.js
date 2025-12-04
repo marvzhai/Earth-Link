@@ -71,50 +71,50 @@ async function getGroups(userId) {
 }
 
 const navLinks = [
-  { href: '/', label: 'Feed' },
+  { href: '/events', label: 'Events' },
   { href: '/groups', label: 'Groups' },
 ];
 
-export default async function Page() {
+export default async function Page({ searchParams }) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     redirect('/login');
   }
 
   const groups = await getGroups(currentUser.id);
+  const params = await searchParams;
+  const viewGroupId = params?.view ? parseInt(params.view, 10) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">
       <header className="px-6 py-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between rounded-3xl bg-white/70 p-4 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-2xl">
+            <Link
+              href="/events"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-2xl"
+            >
               <Leaf className="h-7 w-7" />
-            </div>
+            </Link>
             <div>
               <h1 className="text-2xl font-semibold text-emerald-900">
                 Earth Link
               </h1>
             </div>
             <div className="ml-6 flex items-center gap-2 text-sm text-emerald-700">
-              <Link
-                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
-                href="/"
-              >
-                Feed
-              </Link>
-              <Link
-                className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
-                href="/events"
-              >
-                Events
-              </Link>
-              <Link
-                className="rounded-full px-3 py-2 bg-emerald-100 text-emerald-900 shadow-sm transition hover:bg-emerald-50"
-                href="/groups"
-              >
-                Groups
-              </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
+                    link.href === '/groups'
+                      ? 'bg-emerald-100 text-emerald-900 shadow-sm'
+                      : ''
+                  }`}
+                  href={link.href}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -132,7 +132,11 @@ export default async function Page() {
 
       <main className="mx-auto max-w-3xl px-6 pb-24">
         <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <GroupsPage initialGroups={groups} currentUser={currentUser} />
+          <GroupsPage
+            initialGroups={groups}
+            currentUser={currentUser}
+            initialViewGroupId={viewGroupId}
+          />
         </section>
       </main>
     </div>

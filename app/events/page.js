@@ -26,7 +26,7 @@ async function getGroups() {
 }
 
 const navLinks = [
-  { href: '/', label: 'Feed' },
+  { href: '/events', label: 'Events' },
   { href: '/groups', label: 'Groups' },
 ];
 
@@ -55,9 +55,12 @@ export default async function Page() {
       <header className="px-6 py-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between rounded-3xl bg-white/70 p-4 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-2xl">
+            <Link
+              href="/events"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-2xl"
+            >
               <Leaf className="h-7 w-7" />
-            </div>
+            </Link>
             <div>
               <h1 className="text-2xl font-semibold text-emerald-900">
                 Earth Link
@@ -67,7 +70,11 @@ export default async function Page() {
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  className="rounded-full px-3 py-2 transition hover:bg-emerald-50"
+                  className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
+                    link.href === '/events'
+                      ? 'bg-emerald-100 text-emerald-900 shadow-sm'
+                      : ''
+                  }`}
                   href={link.href}
                 >
                   {link.label}
