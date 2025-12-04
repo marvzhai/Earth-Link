@@ -11,8 +11,11 @@ const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
 export async function GET() {
   try {
     await initializeDatabase();
+    const currentUser = await getCurrentUser();
+    const userId = currentUser?.id ?? -1;
 
-    const [groups] = await pool.query(`
+    const [groups] = await pool.query(
+      `
       SELECT
         \`groups\`.id,
         \`groups\`.name,
@@ -24,16 +27,22 @@ export async function GET() {
         \`groups\`.createdAt,
         \`groups\`.creatorId,
         users.handle as creatorHandle,
-        users.name as creatorName
+        users.name as creatorName,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id) AS memberCount,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id AND group_members.userId = ?) > 0 AS isMember
       FROM \`groups\`
       JOIN users ON \`groups\`.creatorId = users.id
       ORDER BY \`groups\`.createdAt DESC
-    `);
+    `,
+      [userId]
+    );
 
     // Parse imageData for each group
     const parsedGroups = groups.map((group) => ({
       ...group,
       images: parseStoredImages(group.imageData),
+      memberCount: Number(group.memberCount) || 0,
+      isMember: Boolean(Number(group.isMember)),
     }));
 
     return NextResponse.json({ groups: parsedGroups });
@@ -139,6 +148,12 @@ export async function POST(request) {
       ]
     );
 
+    // Automatically add creator as a member
+    await pool.query(
+      'INSERT INTO group_members (groupId, userId, createdAt) VALUES (?, ?, ?)',
+      [result.insertId, userId, createdAt]
+    );
+
     const [rows] = await pool.query(
       `
       SELECT
@@ -162,6 +177,8 @@ export async function POST(request) {
 
     const group = rows[0];
     group.images = parseStoredImages(group.imageData);
+    group.memberCount = 1; // Creator is automatically a member
+    group.isMember = true;
 
     return NextResponse.json({ group }, { status: 201 });
   } catch (error) {

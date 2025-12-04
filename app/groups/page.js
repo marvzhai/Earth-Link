@@ -31,10 +31,11 @@ function parseStoredImages(imageData) {
   return [];
 }
 
-async function getGroups() {
+async function getGroups(userId) {
   try {
     await initializeDatabase();
-    const [groups] = await pool.query(`
+    const [groups] = await pool.query(
+      `
       SELECT
         \`groups\`.id,
         \`groups\`.name,
@@ -46,16 +47,22 @@ async function getGroups() {
         \`groups\`.createdAt,
         \`groups\`.creatorId,
         users.handle as creatorHandle,
-        users.name as creatorName
+        users.name as creatorName,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id) AS memberCount,
+        (SELECT COUNT(*) FROM group_members WHERE group_members.groupId = \`groups\`.id AND group_members.userId = ?) > 0 AS isMember
       FROM \`groups\`
       JOIN users ON \`groups\`.creatorId = users.id
       ORDER BY \`groups\`.createdAt DESC
-    `);
+    `,
+      [userId ?? -1]
+    );
 
     // Parse imageData for each group
     return groups.map((group) => ({
       ...group,
       images: parseStoredImages(group.imageData),
+      memberCount: Number(group.memberCount) || 0,
+      isMember: Boolean(Number(group.isMember)),
     }));
   } catch (err) {
     console.error('Error fetching groups:', err);
@@ -69,7 +76,7 @@ export default async function Page() {
     redirect('/login');
   }
 
-  const groups = await getGroups();
+  const groups = await getGroups(currentUser.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-lime-50 to-green-100 text-emerald-950">

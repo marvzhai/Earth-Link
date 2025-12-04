@@ -3,12 +3,27 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-export default function GroupDetailModal({ isOpen, onClose, group }) {
+export default function GroupDetailModal({
+  isOpen,
+  onClose,
+  group,
+  onGroupUpdated,
+}) {
   const [mounted, setMounted] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (group) {
+      setMemberCount(group.memberCount || 0);
+      setIsMember(group.isMember || false);
+    }
+  }, [group]);
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -23,6 +38,37 @@ export default function GroupDetailModal({ isOpen, onClose, group }) {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  const handleJoinLeave = async () => {
+    if (!group) return;
+    setIsJoining(true);
+
+    try {
+      const response = await fetch(`/api/groups/${group.id}/members`, {
+        method: isMember ? 'DELETE' : 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update membership');
+      }
+
+      setMemberCount(data.memberCount);
+      setIsMember(data.isMember);
+
+      // Update parent state
+      onGroupUpdated?.({
+        ...group,
+        memberCount: data.memberCount,
+        isMember: data.isMember,
+      });
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   if (!isOpen || !mounted || !group) return null;
 
@@ -59,6 +105,9 @@ export default function GroupDetailModal({ isOpen, onClose, group }) {
                 <h3 className="text-lg font-semibold text-emerald-900">
                   {group.name}
                 </h3>
+                <p className="text-sm text-emerald-600">
+                  {memberCount} {memberCount === 1 ? 'member' : 'members'}
+                </p>
               </div>
             </div>
             <button
@@ -83,6 +132,76 @@ export default function GroupDetailModal({ isOpen, onClose, group }) {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+            {/* Join/Leave Button */}
+            <button
+              onClick={handleJoinLeave}
+              disabled={isJoining}
+              className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                isMember
+                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                  : 'bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-sm hover:shadow-md'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isJoining ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  {isMember ? 'Leaving...' : 'Joining...'}
+                </span>
+              ) : isMember ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Joined · Leave group
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                  Join group
+                </span>
+              )}
+            </button>
+
             {/* Images */}
             {groupImages.length > 0 && (
               <div
