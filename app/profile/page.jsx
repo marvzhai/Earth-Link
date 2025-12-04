@@ -127,6 +127,7 @@ async function getUserData(userId) {
 
 const navLinks = [
   { href: '/events', label: 'Events' },
+  { href: '/map', label: 'Map' },
   { href: '/groups', label: 'Groups' },
 ];
 
@@ -209,6 +210,25 @@ export default async function ProfilePage() {
                 Log out
               </button>
             </form>
+            <Link
+              href="/search"
+              className="rounded-full bg-emerald-50 p-2.5 text-emerald-600 transition hover:bg-emerald-100"
+              title="Search"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </Link>
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-500 text-xs font-semibold text-white">
                 {currentUser.name?.[0]?.toUpperCase() || 'U'}
@@ -259,6 +279,28 @@ export default async function ProfilePage() {
                     {joinDate}
                   </span>
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <Link
+                  href="/settings"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-200"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                  Edit profile
+                </Link>
               </div>
             </div>
           </div>

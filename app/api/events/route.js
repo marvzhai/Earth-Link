@@ -39,6 +39,8 @@ export async function POST(request) {
     const {
       title,
       location,
+      latitude,
+      longitude,
       description,
       eventTime,
       groupId,
@@ -102,16 +104,24 @@ export async function POST(request) {
     const cleanDescription = description?.trim() || null;
     const cleanRsvpLink = rsvpLink?.trim() || null;
     const cleanGroupId = groupId ? Number(groupId) : null;
+    const cleanLatitude =
+      latitude !== undefined && latitude !== null ? parseFloat(latitude) : null;
+    const cleanLongitude =
+      longitude !== undefined && longitude !== null
+        ? parseFloat(longitude)
+        : null;
 
     const [result] = await pool.query(
       `INSERT INTO events 
-        (creatorId, groupId, title, location, description, imageData, rsvpLink, eventTime, createdAt) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (creatorId, groupId, title, location, latitude, longitude, description, imageData, rsvpLink, eventTime, createdAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         cleanGroupId,
         title.trim(),
         cleanLocation,
+        cleanLatitude,
+        cleanLongitude,
         cleanDescription,
         mediaData,
         cleanRsvpLink,

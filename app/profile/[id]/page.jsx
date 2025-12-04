@@ -127,6 +127,7 @@ async function getUserData(userId) {
 
 const navLinks = [
   { href: '/events', label: 'Events' },
+  { href: '/map', label: 'Map' },
   { href: '/groups', label: 'Groups' },
 ];
 

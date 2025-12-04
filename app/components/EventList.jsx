@@ -55,6 +55,7 @@ export default function EventList({
   events = [],
   onEventDeleted,
   onEventUpdated,
+  onEditEvent,
   currentUser,
 }) {
   const [deletingId, setDeletingId] = useState(null);
@@ -467,33 +468,15 @@ export default function EventList({
                   </button>
 
                   {currentUser?.id === event.creatorId && (
-                    <button
-                      onClick={(e) => handleDelete(e, event.id)}
-                      disabled={deletingId === event.id}
-                      className="rounded-full p-2 text-emerald-500 transition hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-60"
-                      aria-label="Delete event"
-                    >
-                      {deletingId === event.id ? (
-                        <svg
-                          className="h-4 w-4 animate-spin"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                      ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditEvent?.(event);
+                        }}
+                        className="rounded-full p-2 text-emerald-500 transition hover:bg-emerald-50 hover:text-emerald-800"
+                        aria-label="Edit event"
+                      >
                         <svg
                           className="h-4 w-4"
                           fill="none"
@@ -504,11 +487,53 @@ export default function EventList({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                           />
                         </svg>
-                      )}
-                    </button>
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, event.id)}
+                        disabled={deletingId === event.id}
+                        className="rounded-full p-2 text-emerald-500 transition hover:bg-emerald-50 hover:text-red-600 disabled:opacity-60"
+                        aria-label="Delete event"
+                      >
+                        {deletingId === event.id ? (
+                          <svg
+                            className="h-4 w-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -569,6 +594,35 @@ export default function EventList({
                     {event.rsvpCount}{' '}
                     {event.rsvpCount === 1 ? 'person' : 'people'} going
                   </span>
+                </div>
+              )}
+
+              {/* Event Images */}
+              {event.images && event.images.length > 0 && (
+                <div
+                  className={`mt-4 ${
+                    event.images.length === 1
+                      ? 'overflow-hidden rounded-2xl border border-emerald-100'
+                      : 'grid gap-2 sm:grid-cols-2'
+                  }`}
+                >
+                  {event.images.slice(0, 4).map((img, idx) => (
+                    <div
+                      key={idx}
+                      className={`overflow-hidden ${
+                        event.images.length === 1
+                          ? ''
+                          : 'rounded-xl border border-emerald-100'
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Event image ${idx + 1}`}
+                        className="h-48 w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 

@@ -1,29 +1,13 @@
-import pool from '@/lib/db';
 import { initializeDatabase } from '@/lib/initDb';
-import EventsPage from '@/app/components/EventsPage';
 import { getCurrentUser } from '@/lib/auth';
+import { fetchAllEventsWithMeta } from '@/lib/eventQueries';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Leaf } from 'lucide-react';
-import { fetchAllEventsWithMeta } from '@/lib/eventQueries';
+import EventMap from '../components/EventMap';
 
 // Mark page as dynamic to allow DB access
 export const dynamic = 'force-dynamic';
-
-async function getGroups() {
-  try {
-    await initializeDatabase();
-    const [groups] = await pool.query(`
-      SELECT id, name
-      FROM \`groups\`
-      ORDER BY name ASC
-    `);
-    return groups;
-  } catch (err) {
-    console.error('Error fetching groups:', err);
-    return [];
-  }
-}
 
 const navLinks = [
   { href: '/events', label: 'Events' },
@@ -31,24 +15,18 @@ const navLinks = [
   { href: '/groups', label: 'Groups' },
 ];
 
-export default async function Page() {
+export default async function MapPage() {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     redirect('/login');
   }
 
   await initializeDatabase();
-  const [events, groups] = await Promise.all([
-    fetchAllEventsWithMeta(currentUser.id),
-    getGroups(),
-  ]);
+  const events = await fetchAllEventsWithMeta(currentUser.id);
 
-  // Sort by eventTime for upcoming events display
-  const sortedByTime = [...events].sort(
-    (a, b) => new Date(a.eventTime).getTime() - new Date(b.eventTime).getTime()
-  );
-  const nextEvent = sortedByTime.find(
-    (e) => new Date(e.eventTime).getTime() >= Date.now()
+  // Filter events that have coordinates
+  const eventsWithLocation = events.filter(
+    (event) => event.latitude && event.longitude
   );
 
   return (
@@ -72,7 +50,7 @@ export default async function Page() {
                 <Link
                   key={link.href}
                   className={`rounded-full px-3 py-2 transition hover:bg-emerald-50 ${
-                    link.href === '/events'
+                    link.href === '/map'
                       ? 'bg-emerald-100 text-emerald-900 shadow-sm'
                       : ''
                   }`}
@@ -117,47 +95,71 @@ export default async function Page() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 pb-24 space-y-8">
-        <section className="rounded-3xl bg-white/85 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
+      <main className="mx-auto max-w-6xl px-6 pb-24">
+        {/* Hero Section */}
+        <section className="mb-6 rounded-3xl bg-white/85 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-wide text-emerald-500">
-                Community Calendar
+                Explore Locally
               </p>
               <h2 className="mt-1 text-2xl font-semibold text-emerald-900">
-                Discover gatherings rooted in nature and connection
+                Events near you
               </h2>
               <p className="mt-2 text-sm text-emerald-600">
-                {events.length > 0
-                  ? `We have ${events.length} ${
-                      events.length === 1 ? 'event' : 'events'
-                    } on the horizon.`
-                  : 'No events yet—start the first one and invite the community.'}
+                {eventsWithLocation.length > 0
+                  ? `${eventsWithLocation.length} ${
+                      eventsWithLocation.length === 1 ? 'event' : 'events'
+                    } on the map`
+                  : 'No events with locations yet. Create one with a map pin!'}
               </p>
             </div>
-            {nextEvent && (
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 p-4 text-sm text-emerald-800 ring-1 ring-emerald-100">
-                <p className="text-xs uppercase tracking-wide text-emerald-500">
-                  Next up
-                </p>
-                <p className="mt-1 font-semibold text-emerald-900">
-                  {nextEvent.title}
-                </p>
-                <p className="text-emerald-700">
-                  {new Date(nextEvent.eventTime).toLocaleString()} ·{' '}
-                  {nextEvent.location || 'TBA'}
-                </p>
-              </div>
-            )}
+            <Link
+              href="/events"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:shadow-md"
+            >
+              <svg
+                className="mr-2 h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Create event
+            </Link>
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white/90 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
-          <EventsPage
-            initialEvents={events}
-            currentUser={currentUser}
-            groups={groups}
-          />
+        {/* Map Section */}
+        <section className="rounded-3xl bg-white/90 shadow-sm ring-1 ring-emerald-100 backdrop-blur overflow-hidden">
+          <EventMap events={eventsWithLocation} />
+        </section>
+
+        {/* Legend */}
+        <section className="mt-6 rounded-3xl bg-white/85 p-6 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
+          <h3 className="mb-4 text-lg font-semibold text-emerald-900">
+            Map Legend
+          </h3>
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full bg-emerald-500"></div>
+              <span className="text-emerald-700">Upcoming events</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full bg-stone-400"></div>
+              <span className="text-emerald-700">Past events</span>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-emerald-500">
+            Click on a marker to see event details. Events without a location
+            won&apos;t appear on the map.
+          </p>
         </section>
       </main>
     </div>

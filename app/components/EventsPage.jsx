@@ -18,6 +18,7 @@ export default function EventsPage({
 }) {
   const [events, setEvents] = useState(initialEvents);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [filter, setFilter] = useState('upcoming');
   const router = useRouter();
 
@@ -44,7 +45,18 @@ export default function EventsPage({
       router.push('/login');
       return;
     }
+    setEditingEvent(null);
     setIsModalOpen(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingEvent(null);
   };
 
   const filteredEvents = useMemo(() => {
@@ -101,8 +113,10 @@ export default function EventsPage({
 
       <EventModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleModalClose}
         onEventCreated={handleEventCreated}
+        onEventUpdated={handleEventUpdated}
+        editEvent={editingEvent}
         groups={groups}
       />
 
@@ -110,6 +124,7 @@ export default function EventsPage({
         events={filteredEvents}
         onEventDeleted={handleEventDeleted}
         onEventUpdated={handleEventUpdated}
+        onEditEvent={handleEditEvent}
         currentUser={currentUser}
       />
     </>
