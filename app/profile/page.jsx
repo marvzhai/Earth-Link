@@ -27,7 +27,7 @@ async function getUserData(userId) {
         eventReplies: [],
       };
     }
-    
+
     const [eventCountRows] = await pool.query(
       'SELECT COUNT(*) as count FROM events WHERE creatorId = ?',
       [userId]
@@ -38,10 +38,8 @@ async function getUserData(userId) {
       [userId]
     );
 
-    
     const groupCount = groupCountRows[0]?.count || 0;
     const eventCount = eventCountRows[0]?.count || 0;
-
 
     const [events] = await pool.query(
       `SELECT 
@@ -224,29 +222,18 @@ export default async function ProfilePage() {
                 Log out
               </button>
             </form>
-            <Link
-              href="/search"
-              className="rounded-full bg-emerald-50 p-2.5 text-emerald-600 transition hover:bg-emerald-100"
-              title="Search"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </Link>
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-500 text-xs font-semibold text-white">
-                {currentUser.name?.[0]?.toUpperCase() || 'U'}
-              </span>
+              {currentUser.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt=""
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              ) : (
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-500 text-xs font-semibold text-white">
+                  {currentUser.name?.[0]?.toUpperCase() || 'U'}
+                </span>
+              )}
               Profile
             </div>
           </div>
@@ -257,9 +244,17 @@ export default async function ProfilePage() {
         {/* Profile Card */}
         <section className="rounded-3xl bg-white/90 p-8 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex items-start gap-6">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 text-4xl font-semibold text-white flex-shrink-0">
-              {user.name?.[0]?.toUpperCase() || 'U'}
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-24 w-24 rounded-2xl object-cover border-2 border-emerald-100 flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 text-4xl font-semibold text-white flex-shrink-0">
+                {user.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
 
             <div className="flex-1">
               <h2 className="text-3xl font-semibold text-emerald-900">

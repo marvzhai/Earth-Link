@@ -202,7 +202,9 @@ export default function EventDetailModal({ isOpen, onClose, event }) {
                     <img
                       src={img}
                       alt={`Event image ${idx + 1}`}
-                      className="h-48 w-full object-cover"
+                      className={`w-full object-cover ${
+                        event.images.length === 1 ? 'h-64 sm:h-80' : 'h-48 sm:h-56'
+                      }`}
                       loading="lazy"
                     />
                   </div>

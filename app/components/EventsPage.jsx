@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EventModal from './EventModal';
 import EventList from './EventList';
+import EventSearch from './EventSearch';
 
 const FILTERS = [
   { label: 'Upcoming', value: 'upcoming' },
@@ -17,6 +18,7 @@ export default function EventsPage({
   groups = [],
 }) {
   const [events, setEvents] = useState(initialEvents);
+  const [searchResults, setSearchResults] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [filter, setFilter] = useState('upcoming');
@@ -28,16 +30,27 @@ export default function EventsPage({
 
   const handleEventCreated = (ev) => {
     setEvents((prev) => [ev, ...prev]);
+    setSearchResults(null); // Clear search when creating
   };
 
   const handleEventDeleted = (id) => {
     setEvents((prev) => prev.filter((event) => event.id !== id));
+    if (searchResults) {
+      setSearchResults((prev) => prev.filter((event) => event.id !== id));
+    }
   };
 
   const handleEventUpdated = (updatedEvent) => {
     setEvents((prev) =>
       prev.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
     );
+    if (searchResults) {
+      setSearchResults((prev) =>
+        prev.map((event) =>
+          event.id === updatedEvent.id ? updatedEvent : event
+        )
+      );
+    }
   };
 
   const handleCreateClick = () => {
@@ -59,7 +72,20 @@ export default function EventsPage({
     setEditingEvent(null);
   };
 
-  const filteredEvents = useMemo(() => {
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+  };
+
+  // Use search results if searching, otherwise use filtered events
+  const displayEvents = useMemo(() => {
+    if (searchResults !== null) {
+      return searchResults;
+    }
+
     if (filter === 'all') return events;
     const now = Date.now();
     if (filter === 'past') {
@@ -68,7 +94,9 @@ export default function EventsPage({
       );
     }
     return events.filter((event) => new Date(event.eventTime).getTime() >= now);
-  }, [events, filter]);
+  }, [events, filter, searchResults]);
+
+  const isSearching = searchResults !== null;
 
   return (
     <>
@@ -92,24 +120,51 @@ export default function EventsPage({
         </button>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-3">
-        {FILTERS.map((item) => (
-          <button
-            key={item.value}
-            onClick={() => setFilter(item.value)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              filter === item.value
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
-                : 'text-emerald-700 hover:bg-emerald-50'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-        <span className="rounded-full border border-emerald-100 px-4 py-2 text-sm text-emerald-700">
-          {filteredEvents.length} listed
-        </span>
+      {/* Search Bar */}
+      <div className="mb-6">
+        <EventSearch
+          onSearchResults={handleSearchResults}
+          onClear={handleClearSearch}
+        />
       </div>
+
+      {/* Filters - only show when not searching */}
+      {!isSearching && (
+        <div className="mb-6 flex flex-wrap gap-3">
+          {FILTERS.map((item) => (
+            <button
+              key={item.value}
+              onClick={() => setFilter(item.value)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                filter === item.value
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+          <span className="rounded-full border border-emerald-100 px-4 py-2 text-sm text-emerald-700">
+            {displayEvents.length} listed
+          </span>
+        </div>
+      )}
+
+      {/* Search results count */}
+      {isSearching && (
+        <div className="mb-6 flex items-center gap-3">
+          <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
+            {displayEvents.length} search{' '}
+            {displayEvents.length === 1 ? 'result' : 'results'}
+          </span>
+          <button
+            onClick={handleClearSearch}
+            className="text-sm text-emerald-600 hover:text-emerald-800 hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
 
       <EventModal
         isOpen={isModalOpen}
@@ -121,7 +176,7 @@ export default function EventsPage({
       />
 
       <EventList
-        events={filteredEvents}
+        events={displayEvents}
         onEventDeleted={handleEventDeleted}
         onEventUpdated={handleEventUpdated}
         onEditEvent={handleEditEvent}

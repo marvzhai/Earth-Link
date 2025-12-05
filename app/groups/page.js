@@ -119,36 +119,23 @@ export default async function Page({ searchParams }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/search"
-              className="rounded-full bg-emerald-50 p-2.5 text-emerald-600 transition hover:bg-emerald-100"
-              title="Search"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </Link>
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow ring-1 ring-emerald-400/50 transition hover:shadow-md"
-            >
+          <Link
+            href="/profile"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow ring-1 ring-emerald-400/50 transition hover:shadow-md"
+          >
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt=""
+                className="h-6 w-6 rounded-full object-cover"
+              />
+            ) : (
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
                 {currentUser.name?.[0]?.toUpperCase() || 'U'}
               </span>
-              Profile
-            </Link>
-          </div>
+            )}
+            Profile
+          </Link>
         </div>
       </header>
 

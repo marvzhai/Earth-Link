@@ -213,9 +213,17 @@ export default async function UserProfilePage({ params }) {
             href="/profile"
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow ring-1 ring-emerald-400/50 transition hover:shadow-md"
           >
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
-              {currentUser.name?.[0]?.toUpperCase() || 'U'}
-            </span>
+            {currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatarUrl}
+                alt=""
+                className="h-6 w-6 rounded-full object-cover"
+              />
+            ) : (
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
+                {currentUser.name?.[0]?.toUpperCase() || 'U'}
+              </span>
+            )}
             Profile
           </Link>
         </div>
@@ -225,9 +233,17 @@ export default async function UserProfilePage({ params }) {
         {/* Profile Card */}
         <section className="rounded-3xl bg-white/90 p-8 shadow-sm ring-1 ring-emerald-100 backdrop-blur">
           <div className="flex items-start gap-6">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 text-4xl font-semibold text-white flex-shrink-0">
-              {user.name?.[0]?.toUpperCase() || 'U'}
-            </div>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-24 w-24 rounded-2xl object-cover border-2 border-emerald-100 flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 text-4xl font-semibold text-white flex-shrink-0">
+                {user.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
 
             <div className="flex-1">
               <h2 className="text-3xl font-semibold text-emerald-900">

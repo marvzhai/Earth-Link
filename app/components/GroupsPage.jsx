@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import GroupModal from './GroupModal';
 import GroupList from './GroupList';
+import GroupSearch from './GroupSearch';
 
 export default function GroupsPage({
   initialGroups,
@@ -11,6 +12,7 @@ export default function GroupsPage({
   initialViewGroupId,
 }) {
   const [groups, setGroups] = useState(initialGroups || []);
+  const [searchResults, setSearchResults] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
@@ -18,11 +20,26 @@ export default function GroupsPage({
     setGroups(initialGroups || []);
   }, [initialGroups]);
 
-  const handleGroupCreated = (group) => setGroups([group, ...groups]);
-  const handleGroupDeleted = (id) =>
+  const handleGroupCreated = (group) => {
+    setGroups([group, ...groups]);
+    setSearchResults(null); // Clear search when creating
+  };
+
+  const handleGroupDeleted = (id) => {
     setGroups(groups.filter((group) => group.id !== id));
-  const handleGroupUpdated = (updatedGroup) =>
+    if (searchResults) {
+      setSearchResults((prev) => prev.filter((group) => group.id !== id));
+    }
+  };
+
+  const handleGroupUpdated = (updatedGroup) => {
     setGroups(groups.map((g) => (g.id === updatedGroup.id ? updatedGroup : g)));
+    if (searchResults) {
+      setSearchResults((prev) =>
+        prev.map((g) => (g.id === updatedGroup.id ? updatedGroup : g))
+      );
+    }
+  };
 
   const handleCreateClick = () => {
     if (!currentUser) {
@@ -31,6 +48,17 @@ export default function GroupsPage({
     }
     setIsModalOpen(true);
   };
+
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+  };
+
+  const displayGroups = searchResults !== null ? searchResults : groups;
+  const isSearching = searchResults !== null;
 
   return (
     <>
@@ -68,11 +96,33 @@ export default function GroupsPage({
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Search Bar */}
       <div className="mb-6">
+        <GroupSearch
+          onSearchResults={handleSearchResults}
+          onClear={handleClearSearch}
+        />
+      </div>
+
+      {/* Stats */}
+      <div className="mb-6 flex items-center gap-3">
         <span className="rounded-full border border-emerald-100 px-4 py-2 text-sm text-emerald-700">
-          {groups.length} {groups.length === 1 ? 'group' : 'groups'}
+          {isSearching
+            ? `${displayGroups.length} search ${
+                displayGroups.length === 1 ? 'result' : 'results'
+              }`
+            : `${displayGroups.length} ${
+                displayGroups.length === 1 ? 'group' : 'groups'
+              }`}
         </span>
+        {isSearching && (
+          <button
+            onClick={handleClearSearch}
+            className="text-sm text-emerald-600 hover:text-emerald-800 hover:underline"
+          >
+            Clear search
+          </button>
+        )}
       </div>
 
       <GroupModal
@@ -82,7 +132,7 @@ export default function GroupsPage({
       />
 
       <GroupList
-        groups={groups}
+        groups={displayGroups}
         onGroupDeleted={handleGroupDeleted}
         onGroupUpdated={handleGroupUpdated}
         currentUser={currentUser}

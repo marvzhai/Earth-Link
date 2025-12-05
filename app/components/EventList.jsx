@@ -289,31 +289,6 @@ export default function EventList({
     }
   };
 
-  const handleShare = async (e, event) => {
-    e.stopPropagation();
-    const shareText = `${event.title}\n📅 ${formatDateTime(
-      event.eventTime
-    )}\n📍 ${event.location || 'TBA'}\n\nJoin us on Earth Link!`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: shareText,
-        });
-      } catch (err) {
-        // User cancelled or error
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareText);
-        alert('Event details copied to clipboard!');
-      } catch {
-        alert('Could not share event');
-      }
-    }
-  };
-
   if (!sortedEvents.length) {
     return (
       <div className="py-16 text-center">
@@ -618,7 +593,11 @@ export default function EventList({
                       <img
                         src={img}
                         alt={`Event image ${idx + 1}`}
-                        className="h-48 w-full object-cover"
+                        className={`w-full object-cover ${
+                          event.images.length === 1
+                            ? 'h-72 sm:h-80'
+                            : 'h-48 sm:h-56'
+                        }`}
                         loading="lazy"
                       />
                     </div>
@@ -681,26 +660,6 @@ export default function EventList({
                 </button>
 
                 <button
-                  onClick={(e) => handleShare(e, event)}
-                  className="flex items-center gap-1.5 hover:text-emerald-800 transition-colors"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
-                  <span>Share</span>
-                </button>
-
-                <button
                   onClick={() => setSelectedEvent(event)}
                   className="ml-auto flex items-center gap-1.5 text-emerald-500 hover:text-emerald-700 transition-colors"
                 >
@@ -743,10 +702,20 @@ export default function EventList({
                           className="rounded-2xl bg-white/80 p-3 shadow-sm"
                         >
                           <div className="mb-1 text-sm font-semibold text-emerald-900">
-                            {reply.authorName}{' '}
-                            <span className="text-xs text-emerald-500">
+                            <Link
+                              href={`/profile/${reply.authorId}`}
+                              className="hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {reply.authorName}
+                            </Link>{' '}
+                            <Link
+                              href={`/profile/${reply.authorId}`}
+                              className="text-xs text-emerald-500 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               @{reply.authorHandle}
-                            </span>
+                            </Link>
                           </div>
                           <p className="text-sm text-emerald-800">
                             {reply.body}

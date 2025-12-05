@@ -70,6 +70,32 @@ export default function GroupDetailModal({
     }
   };
 
+  const handleShare = async () => {
+    const shareText = `${group.name}\n📍 ${
+      group.location || 'Online'
+    }\n${memberCount} members\n\n${
+      group.description || ''
+    }\n\nJoin us on Earth Link!`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: group.name,
+          text: shareText,
+        });
+      } catch (err) {
+        // User cancelled or error
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('Group details copied to clipboard!');
+      } catch {
+        alert('Could not share group');
+      }
+    }
+  };
+
   if (!isOpen || !mounted || !group) return null;
 
   const groupImages = Array.isArray(group.images) ? group.images : [];
@@ -202,6 +228,27 @@ export default function GroupDetailModal({
               )}
             </button>
 
+            {/* Share Button */}
+            <button
+              onClick={handleShare}
+              className="flex items-center justify-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                />
+              </svg>
+              Share
+            </button>
+
             {/* Images */}
             {groupImages.length > 0 && (
               <div
@@ -220,7 +267,9 @@ export default function GroupDetailModal({
                       src={src}
                       alt={`${group.name} image ${index + 1}`}
                       className={`w-full object-cover ${
-                        groupImages.length === 1 ? 'h-56' : 'h-40'
+                        groupImages.length === 1
+                          ? 'h-64 sm:h-80'
+                          : 'h-48 sm:h-56'
                       }`}
                       loading="lazy"
                     />
